@@ -31,13 +31,21 @@ function initLoginForm() {
     if (!form) return;
 
     const USERS = [
-        { badgeId: 'U-001', password: 'pravah001', unitId: 'U-001', postId: 'LOC_01' },
-        { badgeId: 'U-002', password: 'pravah002', unitId: 'U-002', postId: 'LOC_02' },
-        { badgeId: 'U-003', password: 'pravah003', unitId: 'U-003', postId: 'LOC_03' },
-        { badgeId: 'U-004', password: 'pravah004', unitId: 'U-004', postId: 'LOC_04' },
-        { badgeId: 'U-005', password: 'pravah005', unitId: 'U-005', postId: 'LOC_05' },
-        { badgeId: 'U-006', password: 'pravah006', unitId: 'U-006', postId: 'LOC_06' },
-        { badgeId: 'U-008', password: 'pravah008', unitId: 'U-008', postId: 'LOC_07' },
+        { badgeId: 'OFF_01', password: 'pravah_off01', unitId: 'OFF_01', postId: 'LOC_01' },
+        { badgeId: 'OFF_02', password: 'pravah_off02', unitId: 'OFF_02', postId: 'LOC_02' },
+        { badgeId: 'OFF_03', password: 'pravah_off03', unitId: 'OFF_03', postId: 'LOC_03' },
+        { badgeId: 'OFF_04', password: 'pravah_off04', unitId: 'OFF_04', postId: 'LOC_04' },
+        { badgeId: 'OFF_05', password: 'pravah_off05', unitId: 'OFF_05', postId: 'LOC_05' },
+        { badgeId: 'OFF_06', password: 'pravah_off06', unitId: 'OFF_06', postId: 'LOC_06' },
+        { badgeId: 'OFF_07', password: 'pravah_off07', unitId: 'OFF_07', postId: 'LOC_07' },
+        { badgeId: 'OFF_08', password: 'pravah_off08', unitId: 'OFF_08', postId: 'LOC_08' },
+        { badgeId: 'OFF_09', password: 'pravah_off09', unitId: 'OFF_09', postId: 'LOC_09' },
+        { badgeId: 'OFF_10', password: 'pravah_off10', unitId: 'OFF_10', postId: 'LOC_10' },
+        { badgeId: 'OFF_11', password: 'pravah_off11', unitId: 'OFF_11', postId: 'LOC_11' },
+        { badgeId: 'OFF_12', password: 'pravah_off12', unitId: 'OFF_12', postId: 'LOC_12' },
+        { badgeId: 'OFF_13', password: 'pravah_off13', unitId: 'OFF_13', postId: 'LOC_13' },
+        { badgeId: 'OFF_14', password: 'pravah_off14', unitId: 'OFF_14', postId: 'LOC_14' },
+        { badgeId: 'OFF_15', password: 'pravah_off15', unitId: 'OFF_15', postId: 'LOC_15' },
     ];
 
     form.addEventListener('submit', async (e) => {
