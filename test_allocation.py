@@ -177,3 +177,33 @@ def test_dynamic_priority_distance_over_risk():
     # Distance priority > Risk: Nearest officer must be assigned
     assert res["assignments"][0]["officer_id"] == "OFF_NEAR"
 
+
+def test_global_distance_optimization_swaps_suboptimal_pairs():
+    # Scenario: OFF_EAST is close to LOC_71 (Kalamna, East), OFF_SOUTH is close to LOC_78 (Manewada, South).
+    # LOC_78 has higher risk (78.0) than LOC_71 (71.0).
+    # Sequential greedy would let LOC_78 claim OFF_EAST first, forcing LOC_71 to take OFF_SOUTH (15+ km total).
+    # Global bipartite optimization swaps the pairings so OFF_EAST -> LOC_71 and OFF_SOUTH -> LOC_78 (< 7 km total).
+    officers = [
+        {"id": "OFF_EAST", "name": "East Squad", "current_lat": 21.148, "current_lon": 79.125, "status": "available"},
+        {"id": "OFF_SOUTH", "name": "South Squad", "current_lat": 21.095, "current_lon": 79.062, "status": "available"}
+    ]
+    locations = [
+        {"id": "LOC_78", "name": "Manewada Ring Road", "lat": 21.110, "lon": 79.105, "risk_score": 78.0},
+        {"id": "LOC_71", "name": "Kalamna Market", "lat": 21.160, "lon": 79.135, "risk_score": 71.0}
+    ]
+
+    res = allocate_personnel(officers, locations, strategy="dynamic_priority_6_5")
+    assert res["summary"]["assigned_officers"] == 2
+
+    asgn_east = next(a for a in res["assignments"] if a["officer_id"] == "OFF_EAST")
+    asgn_south = next(a for a in res["assignments"] if a["officer_id"] == "OFF_SOUTH")
+
+    # OFF_EAST must go to LOC_71 (1.69 km instead of 4.71 km)
+    assert asgn_east["location_id"] == "LOC_71"
+    # OFF_SOUTH must go to LOC_78 (4.76 km instead of 10.47 km)
+    assert asgn_south["location_id"] == "LOC_78"
+    # Total distance is under 7 km (down from > 15 km)
+    total_dist = asgn_east["distance_km"] + asgn_south["distance_km"]
+    assert total_dist < 7.0
+
+

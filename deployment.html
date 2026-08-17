@@ -1,21 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>PravahAI - Deployments</title>
     <!-- Google Fonts: Inter & Material Symbols -->
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Modular CSS -->
-    <link href="css/style.css" rel="stylesheet"/>
-    <link href="css/components.css" rel="stylesheet"/>
-    <link href="css/pages.css" rel="stylesheet"/>
+    <link href="css/style.css" rel="stylesheet" />
+    <link href="css/components.css" rel="stylesheet" />
+    <link href="css/pages.css" rel="stylesheet" />
 </head>
+
 <body>
     <!-- Floating Menu Toggle for Mobile Screens -->
     <button class="menu-toggle-floating" id="menu-toggle">
@@ -26,20 +31,22 @@
         <!-- Sidebar Navigation Component -->
         <aside class="app-sidebar">
             <div class="sidebar-header">
-                <img class="sidebar-logo" alt="PravahAI Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
+                <img class="sidebar-logo" alt="PravahAI Logo"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg" />
                 <div class="sidebar-header-titles">
                     <h2>PravahAI</h2>
                     <p class="text-label-sm" id="sidebar-clock"></p>
                 </div>
             </div>
-            
+
             <nav class="sidebar-nav">
                 <a class="nav-item" href="index.html">
                     <span class="material-symbols-outlined" aria-hidden="true">map</span>
                     <span>Live Map</span>
                 </a>
                 <a class="nav-item active" href="deployment.html">
-                    <span class="material-symbols-outlined" aria-hidden="true" style="font-variation-settings: 'FILL' 1;">local_police</span>
+                    <span class="material-symbols-outlined" aria-hidden="true"
+                        style="font-variation-settings: 'FILL' 1;">local_police</span>
                     <span>Deployments</span>
                 </a>
                 <a class="nav-item" href="risk-analysis.html">
@@ -57,12 +64,13 @@
                     <span class="material-symbols-outlined" aria-hidden="true">warning</span>
                     Emergency Override
                 </button>
-                
+
                 <div style="display: flex; gap: 8px; justify-content: space-between; margin-bottom: 8px;">
                     <button class="btn-icon" id="theme-toggle" style="flex: 1; height: 36px; padding: 0;">
                         <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
                     </button>
-                    <button class="btn-icon" id="sidebar-notifications" style="flex: 1; height: 36px; padding: 0; position: relative;">
+                    <button class="btn-icon" id="sidebar-notifications"
+                        style="flex: 1; height: 36px; padding: 0; position: relative;">
                         <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
                         <span class="badge-dot" style="display: none; top: 4px; right: 4px;"></span>
                     </button>
@@ -70,7 +78,8 @@
 
                 <div class="sidebar-footer-nav">
                     <a class="nav-item" href="#">
-                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">settings</span>
+                        <span class="material-symbols-outlined" aria-hidden="true"
+                            style="font-size: 18px;">settings</span>
                         <span>Settings</span>
                     </a>
                     <a class="nav-item" href="#">
@@ -86,14 +95,15 @@
             <!-- Main dashboard scroll area -->
             <main class="workspace-scroll">
                 <div class="workspace-container">
-                    
+
                     <!-- KPI Metric Summary Row -->
                     <section class="kpi-row">
                         <!-- Card 1 -->
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Active Resources</h3>
-                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-secondary);">engineering</span>
+                                <span class="material-symbols-outlined" aria-hidden="true"
+                                    style="font-size: 18px; color: var(--color-secondary);">engineering</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value" id="active-officers-count">5</span>
@@ -105,7 +115,8 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Optimal Covered Risk</h3>
-                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-primary);">shield</span>
+                                <span class="material-symbols-outlined" aria-hidden="true"
+                                    style="font-size: 18px; color: var(--color-primary);">shield</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value" id="kpi-risk-covered">497.9</span>
@@ -117,11 +128,14 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Total Fleet</h3>
-                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-primary);">directions_car</span>
+                                <span class="material-symbols-outlined" aria-hidden="true"
+                                    style="font-size: 18px; color: var(--color-primary);">directions_car</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value">22</span>
-                                <span class="text-body-md" style="color: var(--color-on-surface-variant); font-weight: 500;">4 Squads Allocated</span>
+                                <span class="text-body-md"
+                                    style="color: var(--color-on-surface-variant); font-weight: 500;">4 Squads
+                                    Allocated</span>
                             </div>
                         </div>
                     </section>
@@ -130,16 +144,19 @@
                     <div class="alloc-command-card">
                         <div class="alloc-command-header">
                             <div>
-                                <h2 style="font-size: 20px; font-weight: 800; color: var(--color-on-surface); display: flex; align-items: center; gap: 10px; margin: 0;">
-                                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 26px;">hub</span>
-                                    Section 6.4 Personnel-Allocation Engine
+                                <h2
+                                    style="font-size: 20px; font-weight: 800; color: var(--color-on-surface); display: flex; align-items: center; gap: 10px; margin: 0;">
+                                    <span class="material-symbols-outlined"
+                                        style="color: var(--color-primary); font-size: 26px;">hub</span>
+                                    Personnel-Allocation Engine
                                 </h2>
                                 <p style="font-size: 13px; color: var(--color-outline); margin: 4px 0 0 0;">
-                                    Integrated Section 6.5 Dynamic Risk Input → Priority Dispatch (Distance &gt; 6.5 Risk)
+                                    Integrated Dynamic Risk Input → Priority Dispatch (Distance &gt; Risk)
                                 </p>
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <span id="engine-backend-badge" class="badge badge-success" style="font-size: 12px; padding: 6px 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                                <span id="engine-backend-badge" class="badge badge-success"
+                                    style="font-size: 12px; padding: 6px 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
                                     Python SciPy REST Server (Port 5000)
                                 </span>
                             </div>
@@ -147,13 +164,14 @@
 
                         <!-- Segmented Strategy Control Buttons -->
                         <div style="margin-bottom: 20px;">
-                            <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-outline); display: block; margin-bottom: 8px;">
+                            <label
+                                style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-outline); display: block; margin-bottom: 8px;">
                                 Select Dispatch Strategy
                             </label>
                             <div class="strategy-segmented-control" id="strategy-btn-group">
                                 <button class="strategy-btn active" data-value="dynamic_priority_6_5">
                                     <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span>
-                                    Section 6.5 Dynamic Priority (Distance &gt; Risk)
+                                    Dynamic Priority (Distance &gt; Risk)
                                 </button>
                                 <button class="strategy-btn" data-value="scipy_linear_sum_assignment">
                                     <span class="material-symbols-outlined" style="font-size: 16px;">balance</span>
@@ -165,51 +183,66 @@
                                 </button>
                             </div>
                             <select id="alloc-strategy" style="display: none;">
-                                <option value="dynamic_priority_6_5" selected>Section 6.5 Dynamic Priority</option>
+                                <option value="dynamic_priority_6_5" selected>Dynamic Priority</option>
                                 <option value="scipy_linear_sum_assignment">SciPy Bipartite Matching</option>
                                 <option value="greedy">Greedy Strategy</option>
                             </select>
                         </div>
 
                         <!-- Parameter Input Sliders -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; background: var(--color-surface-container-low); padding: 18px; border-radius: var(--rounded-lg); border: 1px solid var(--color-outline-variant); margin-bottom: 20px;">
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; background: var(--color-surface-container-low); padding: 18px; border-radius: var(--rounded-lg); border: 1px solid var(--color-outline-variant); margin-bottom: 20px;">
                             <div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                                     <label style="font-size: 12px; font-weight: 700; color: var(--color-on-surface);">
                                         Alpha Weight (α)
                                     </label>
-                                    <span id="alpha-val-label" style="font-size: 12px; font-weight: 800; color: var(--color-primary);">0.20 (Dist Priority)</span>
+                                    <span id="alpha-val-label"
+                                        style="font-size: 12px; font-weight: 800; color: var(--color-primary);">0.20
+                                        (Dist Priority)</span>
                                 </div>
-                                <input type="range" id="alloc-alpha" min="0" max="1" step="0.05" value="0.2" style="width: 100%; accent-color: var(--color-primary);" />
-                                <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--color-outline);">
+                                <input type="range" id="alloc-alpha" min="0" max="1" step="0.05" value="0.2"
+                                    style="width: 100%; accent-color: var(--color-primary);" />
+                                <div
+                                    style="display: flex; justify-content: space-between; font-size: 10px; color: var(--color-outline);">
                                     <span>α=0 (Pure Dist)</span>
                                     <span>α=1 (Pure Risk)</span>
                                 </div>
                             </div>
 
                             <div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                                     <label style="font-size: 12px; font-weight: 700; color: var(--color-on-surface);">
                                         Max Radius (km)
                                     </label>
-                                    <span id="radius-val-label" style="font-size: 12px; font-weight: 800; color: var(--color-primary);">15 km</span>
+                                    <span id="radius-val-label"
+                                        style="font-size: 12px; font-weight: 800; color: var(--color-primary);">15
+                                        km</span>
                                 </div>
-                                <input type="range" id="alloc-radius-slider" min="1" max="50" step="1" value="15" style="width: 100%; accent-color: var(--color-primary);" />
+                                <input type="range" id="alloc-radius-slider" min="1" max="50" step="1" value="15"
+                                    style="width: 100%; accent-color: var(--color-primary);" />
                                 <input type="number" id="alloc-radius" value="15" style="display: none;" />
                             </div>
 
                             <div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                                     <label style="font-size: 12px; font-weight: 700; color: var(--color-on-surface);">
                                         High-Risk Lock Threshold
                                     </label>
-                                    <span id="lock-val-label" style="font-size: 12px; font-weight: 800; color: var(--color-secondary);">70.0 Risk</span>
+                                    <span id="lock-val-label"
+                                        style="font-size: 12px; font-weight: 800; color: var(--color-secondary);">70.0
+                                        Risk</span>
                                 </div>
-                                <input type="range" id="alloc-lock-slider" min="50" max="90" step="5" value="70" style="width: 100%; accent-color: var(--color-secondary);" />
+                                <input type="range" id="alloc-lock-slider" min="50" max="90" step="5" value="70"
+                                    style="width: 100%; accent-color: var(--color-secondary);" />
                             </div>
 
                             <div style="display: flex; align-items: flex-end;">
-                                <button class="btn btn-primary" id="btn-run-allocation" style="width: 100%; height: 42px; gap: 8px; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 32, 70, 0.2);">
+                                <button class="btn btn-primary" id="btn-run-allocation"
+                                    style="width: 100%; height: 42px; gap: 8px; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 32, 70, 0.2);">
                                     <span class="material-symbols-outlined" style="font-size: 20px;">bolt</span>
                                     Run Allocation Optimizer
                                 </button>
@@ -220,45 +253,74 @@
                         <div class="alloc-metrics-grid">
                             <div class="alloc-metric-card">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 11px; color: var(--color-outline); font-weight: 700; text-transform: uppercase;">Covered Risk Score</span>
-                                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 18px;">shield</span>
+                                    <span
+                                        style="font-size: 11px; color: var(--color-outline); font-weight: 700; text-transform: uppercase;">Covered
+                                        Risk Score</span>
+                                    <span class="material-symbols-outlined"
+                                        style="color: var(--color-primary); font-size: 18px;">shield</span>
                                 </div>
-                                <div id="alloc-summary-risk" style="font-size: 24px; font-weight: 800; color: var(--color-primary);">0.0</div>
-                                <div style="font-size: 11px; color: var(--color-secondary); font-weight: 600;">Optimal 6.5 Risk Coverage</div>
+                                <div id="alloc-summary-risk"
+                                    style="font-size: 24px; font-weight: 800; color: var(--color-primary);">0.0</div>
+                                <div style="font-size: 11px; color: var(--color-secondary); font-weight: 600;">Optimal
+                                    Risk Coverage</div>
                             </div>
                             <div class="alloc-metric-card">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 11px; color: var(--color-outline); font-weight: 700; text-transform: uppercase;">Officers Assigned</span>
-                                    <span class="material-symbols-outlined" style="color: var(--color-secondary); font-size: 18px;">badge</span>
+                                    <span
+                                        style="font-size: 11px; color: var(--color-outline); font-weight: 700; text-transform: uppercase;">Officers
+                                        Assigned</span>
+                                    <span class="material-symbols-outlined"
+                                        style="color: var(--color-secondary); font-size: 18px;">badge</span>
                                 </div>
-                                <div id="alloc-summary-officers" style="font-size: 24px; font-weight: 800; color: var(--color-secondary);">0 / 0</div>
-                                <div id="alloc-summary-locked-cnt" style="font-size: 11px; color: var(--color-primary); font-weight: 600;">0 High-Risk Posts Locked</div>
+                                <div id="alloc-summary-officers"
+                                    style="font-size: 24px; font-weight: 800; color: var(--color-secondary);">0 / 0
+                                </div>
+                                <div id="alloc-summary-locked-cnt"
+                                    style="font-size: 11px; color: var(--color-primary); font-weight: 600;">0 High-Risk
+                                    Posts Locked</div>
                             </div>
                             <div class="alloc-metric-card">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 11px; color: var(--color-outline); font-weight: 700; text-transform: uppercase;">Hotspots Covered</span>
-                                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 18px;">location_on</span>
+                                    <span
+                                        style="font-size: 11px; color: var(--color-outline); font-weight: 700; text-transform: uppercase;">Hotspots
+                                        Covered</span>
+                                    <span class="material-symbols-outlined"
+                                        style="color: var(--color-primary); font-size: 18px;">location_on</span>
                                 </div>
-                                <div id="alloc-summary-hotspots" style="font-size: 24px; font-weight: 800; color: var(--color-on-surface);">0 / 0</div>
-                                <div style="font-size: 11px; color: var(--color-outline); font-weight: 600;">No High Risk Left Open</div>
+                                <div id="alloc-summary-hotspots"
+                                    style="font-size: 24px; font-weight: 800; color: var(--color-on-surface);">0 / 0
+                                </div>
+                                <div style="font-size: 11px; color: var(--color-outline); font-weight: 600;">No High
+                                    Risk Left Open</div>
                             </div>
                             <div class="alloc-metric-card">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 11px; color: var(--color-outline); font-weight: 700; text-transform: uppercase;">Avg Latency / Distance</span>
-                                    <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 18px;">near_me</span>
+                                    <span
+                                        style="font-size: 11px; color: var(--color-outline); font-weight: 700; text-transform: uppercase;">Avg
+                                        Latency / Distance</span>
+                                    <span class="material-symbols-outlined"
+                                        style="color: var(--color-primary); font-size: 18px;">near_me</span>
                                 </div>
-                                <div id="alloc-summary-dist" style="font-size: 24px; font-weight: 800; color: var(--color-on-surface);">0.0 km</div>
-                                <div style="font-size: 11px; color: var(--color-secondary); font-weight: 600;">Distance &gt; Risk Priority</div>
+                                <div id="alloc-summary-dist"
+                                    style="font-size: 24px; font-weight: 800; color: var(--color-on-surface);">0.0 km
+                                </div>
+                                <div style="font-size: 11px; color: var(--color-secondary); font-weight: 600;">Distance
+                                    &gt; Risk Priority</div>
                             </div>
                         </div>
 
                         <!-- Leaflet Interactive Allocation Vector Map -->
-                        <div id="allocation-map" style="height: 400px; width: 100%; border-radius: var(--rounded-xl); border: 1px solid var(--color-outline-variant); margin-bottom: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);"></div>
+                        <div id="allocation-map"
+                            style="height: 400px; width: 100%; border-radius: var(--rounded-xl); border: 1px solid var(--color-outline-variant); margin-bottom: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+                        </div>
 
                         <!-- Allocation Output Results Table -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <h4 style="font-size: 15px; font-weight: 800; color: var(--color-on-surface); margin: 0; display: flex; align-items: center; gap: 8px;">
-                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-primary);">table_chart</span>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4
+                                style="font-size: 15px; font-weight: 800; color: var(--color-on-surface); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span class="material-symbols-outlined"
+                                    style="font-size: 18px; color: var(--color-primary);">table_chart</span>
                                 Dispatch Matrix &amp; Protection Status
                             </h4>
                             <span class="badge badge-success" style="font-size: 11px;">100% High Risk Covered</span>
@@ -271,7 +333,7 @@
                                         <th>Current Post / Coords</th>
                                         <th>Assigned Hotspot</th>
                                         <th>Hotspot Coords</th>
-                                        <th>6.5 Risk</th>
+                                        <th>Risk</th>
                                         <th>Travel Dist</th>
                                         <th>Protection Status</th>
                                     </tr>
@@ -290,9 +352,10 @@
                             <!-- Search -->
                             <div class="filter-group" style="flex: 1; min-width: 240px;">
                                 <label for="officer-search">Search Unit / Officer</label>
-                                <input class="form-control" id="officer-search" placeholder="Type officer name or ID..." style="width: 100%;" type="text"/>
+                                <input class="form-control" id="officer-search" placeholder="Type officer name or ID..."
+                                    style="width: 100%;" type="text" />
                             </div>
-                            
+
                             <!-- Status Select -->
                             <div class="filter-group">
                                 <label for="status-filter">Status</label>
@@ -343,9 +406,10 @@
                 </div>
                 <div class="modal-body">
                     <p style="margin-bottom: 16px; font-weight: 600; font-size: 14px; color: var(--color-on-surface);">
-                        Modifying parameters for: <span id="reassign-officer-name" style="color: var(--color-primary); font-weight: 800;">Inspector Sanjay Patil</span>
+                        Modifying parameters for: <span id="reassign-officer-name"
+                            style="color: var(--color-primary); font-weight: 800;">Inspector Sanjay Patil</span>
                     </p>
-                    
+
                     <div class="form-group">
                         <label for="reassign-post">New Posting Location</label>
                         <select class="form-control select-control" id="reassign-post" required>
@@ -370,7 +434,8 @@
 
                     <div class="form-group">
                         <label for="reassign-reason">Reason for Reassignment</label>
-                        <input class="form-control" id="reassign-reason" type="text" placeholder="e.g. Emergency reinforcement, VIP route clearance..." required/>
+                        <input class="form-control" id="reassign-reason" type="text"
+                            placeholder="e.g. Emergency reinforcement, VIP route clearance..." required />
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -388,4 +453,5 @@
     <script src="js/main.js"></script>
     <script src="js/deployment.js"></script>
 </body>
+
 </html>

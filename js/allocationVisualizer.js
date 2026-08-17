@@ -62,13 +62,103 @@ const AllocationVisualizer = (() => {
     }
 
     /**
-     * Local JavaScript fallback algorithm implementation
+     * Solve rectangular Linear Sum Assignment problem (Hungarian algorithm O(N^3))
+     */
+    function solveLinearSumAssignment(costMatrix) {
+        const rows = costMatrix.length;
+        if (rows === 0) return { rowInd: [], colInd: [] };
+        const cols = costMatrix[0].length;
+        if (cols === 0) return { rowInd: [], colInd: [] };
+
+        const transposed = rows > cols;
+        let C = costMatrix;
+        let nR = rows, nC = cols;
+        if (transposed) {
+            C = Array.from({ length: cols }, (_, c) =>
+                Array.from({ length: rows }, (_, r) => costMatrix[r][c])
+            );
+            nR = cols;
+            nC = rows;
+        }
+
+        const u = new Float64Array(nR + 1);
+        const v = new Float64Array(nC + 1);
+        const p = new Int32Array(nC + 1);
+        const way = new Int32Array(nC + 1);
+
+        for (let i = 1; i <= nR; i++) {
+            p[0] = i;
+            let j0 = 0;
+            const minv = new Float64Array(nC + 1).fill(Infinity);
+            const used = new Uint8Array(nC + 1);
+
+            do {
+                used[j0] = 1;
+                const i0 = p[j0];
+                let delta = Infinity;
+                let j1 = 0;
+
+                for (let j = 1; j <= nC; j++) {
+                    if (!used[j]) {
+                        const cur = C[i0 - 1][j - 1] - u[i0] - v[j];
+                        if (cur < minv[j]) {
+                            minv[j] = cur;
+                            way[j] = j0;
+                        }
+                        if (minv[j] < delta) {
+                            delta = minv[j];
+                            j1 = j;
+                        }
+                    }
+                }
+
+                for (let j = 0; j <= nC; j++) {
+                    if (used[j]) {
+                        u[p[j]] += delta;
+                        v[j] -= delta;
+                    } else {
+                        minv[j] -= delta;
+                    }
+                }
+                j0 = j1;
+            } while (p[j0] !== 0);
+
+            do {
+                const j1 = way[j0];
+                p[j0] = p[j1];
+                j0 = j1;
+            } while (j0 !== 0);
+        }
+
+        const rowInd = [];
+        const colInd = [];
+
+        for (let j = 1; j <= nC; j++) {
+            if (p[j] !== 0) {
+                const r = p[j] - 1;
+                const c = j - 1;
+                if (transposed) {
+                    rowInd.push(c);
+                    colInd.push(r);
+                } else {
+                    rowInd.push(r);
+                    colInd.push(c);
+                }
+            }
+        }
+
+        return { rowInd, colInd };
+    }
+
+    /**
+     * Local JavaScript fallback algorithm implementation with Global Distance Optimization
      */
     function runLocalAllocation(officers, locations, strategy, alpha, defaultMaxRadius) {
         const availableOfficers = officers.filter(o => o.status === 'available');
         const assignments = [];
         const assignedOfficerIds = new Set();
         const coveredLocationIds = new Set();
+        const INFEASIBLE_PENALTY = 1e6;
 
         if (strategy === 'dynamic_priority_6_5') {
             const locMap = {};
@@ -100,107 +190,144 @@ const AllocationVisualizer = (() => {
             // 2. Uncovered locations sorted by 6.5 risk score
             const uncoveredLocs = locations.filter(l => !coveredLocationIds.has(l.id))
                                            .sort((a, b) => b.risk_score - a.risk_score);
+            const remainingOfficers = availableOfficers.filter(o => !assignedOfficerIds.has(o.id));
 
-            // 3. Dispatch remaining officers prioritizing Distance over Risk Score
-            for (const loc of uncoveredLocs) {
-                const candidates = availableOfficers.filter(o => !assignedOfficerIds.has(o.id));
-                if (candidates.length === 0) break;
+            // 3. Dispatch remaining officers prioritizing minimum total travel distance globally
+            if (remainingOfficers.length > 0 && uncoveredLocs.length > 0) {
+                const targetLocs = uncoveredLocs.slice(0, remainingOfficers.length);
+                const K = remainingOfficers.length;
+                const N = targetLocs.length;
+                const costMatrix = Array.from({ length: K }, () => new Float64Array(N));
 
-                let bestOff = null;
-                let minD = Infinity;
-                for (const off of candidates) {
+                for (let i = 0; i < K; i++) {
+                    const off = remainingOfficers[i];
                     const rLimit = off.max_radius_km || defaultMaxRadius;
-                    const d = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
-                    if (d <= rLimit && d < minD) {
-                        minD = d;
-                        bestOff = off;
+                    for (let j = 0; j < N; j++) {
+                        const loc = targetLocs[j];
+                        const d = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
+                        costMatrix[i][j] = d > rLimit ? INFEASIBLE_PENALTY + d : d;
                     }
                 }
-                if (bestOff) {
-                    assignedOfficerIds.add(bestOff.id);
+
+                const { rowInd, colInd } = solveLinearSumAssignment(costMatrix);
+
+                for (let idx = 0; idx < rowInd.length; idx++) {
+                    const i = rowInd[idx];
+                    const j = colInd[idx];
+                    if (costMatrix[i][j] >= INFEASIBLE_PENALTY / 2) continue;
+
+                    const off = remainingOfficers[i];
+                    const loc = targetLocs[j];
+                    const dist = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
+
+                    assignedOfficerIds.add(off.id);
                     coveredLocationIds.add(loc.id);
                     assignments.push({
-                        officer_id: bestOff.id,
-                        officer_name: bestOff.name,
-                        officer_start: [bestOff.current_lat, bestOff.current_lon],
+                        officer_id: off.id,
+                        officer_name: off.name,
+                        officer_start: [off.current_lat, off.current_lon],
                         location_id: loc.id,
                         location_name: loc.name,
                         location_coords: [loc.lat, loc.lon],
                         risk_score: loc.risk_score,
-                        distance_km: Math.round(minD * 100) / 100,
+                        distance_km: Math.round(dist * 100) / 100,
                         protection_status: 'dynamically_dispatched'
                     });
                 }
             }
         } else if (strategy === 'greedy') {
             const sortedLocs = [...locations].sort((a, b) => b.risk_score - a.risk_score);
-            for (const loc of sortedLocs) {
-                let bestOff = null;
-                let minD = Infinity;
-                for (const off of availableOfficers) {
-                    if (assignedOfficerIds.has(off.id)) continue;
+            if (availableOfficers.length > 0 && sortedLocs.length > 0) {
+                const targetLocs = sortedLocs.slice(0, availableOfficers.length);
+                const K = availableOfficers.length;
+                const N = targetLocs.length;
+                const costMatrix = Array.from({ length: K }, () => new Float64Array(N));
+
+                for (let i = 0; i < K; i++) {
+                    const off = availableOfficers[i];
                     const rLimit = off.max_radius_km || defaultMaxRadius;
-                    const d = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
-                    if (d <= rLimit && d < minD) {
-                        minD = d;
-                        bestOff = off;
+                    for (let j = 0; j < N; j++) {
+                        const loc = targetLocs[j];
+                        const d = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
+                        costMatrix[i][j] = d > rLimit ? INFEASIBLE_PENALTY + d : d;
                     }
                 }
-                if (bestOff) {
-                    assignedOfficerIds.add(bestOff.id);
+
+                const { rowInd, colInd } = solveLinearSumAssignment(costMatrix);
+
+                for (let idx = 0; idx < rowInd.length; idx++) {
+                    const i = rowInd[idx];
+                    const j = colInd[idx];
+                    if (costMatrix[i][j] >= INFEASIBLE_PENALTY / 2) continue;
+
+                    const off = availableOfficers[i];
+                    const loc = targetLocs[j];
+                    const dist = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
+
+                    assignedOfficerIds.add(off.id);
                     coveredLocationIds.add(loc.id);
                     assignments.push({
-                        officer_id: bestOff.id,
-                        officer_name: bestOff.name,
-                        officer_start: [bestOff.current_lat, bestOff.current_lon],
+                        officer_id: off.id,
+                        officer_name: off.name,
+                        officer_start: [off.current_lat, off.current_lon],
                         location_id: loc.id,
                         location_name: loc.name,
                         location_coords: [loc.lat, loc.lon],
                         risk_score: loc.risk_score,
-                        distance_km: Math.round(minD * 100) / 100
+                        distance_km: Math.round(dist * 100) / 100
                     });
                 }
             }
         } else {
-            // SciPy matching fallback
-            const pairs = [];
-            const risks = locations.map(l => l.risk_score);
-            const minR = Math.min(...risks), maxR = Math.max(...risks);
-            
-            for (const off of availableOfficers) {
-                const rLimit = off.max_radius_km || defaultMaxRadius;
-                for (const loc of locations) {
-                    const dist = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
-                    if (dist > rLimit) continue;
-                    
-                    const normR = maxR > minR ? (loc.risk_score - minR) / (maxR - minR) : 1.0;
-                    const normD = Math.min(dist / rLimit, 1.0);
-                    let cost = alpha * (1.0 - normR) + (1.0 - alpha) * normD;
+            // SciPy matching fallback with Hungarian algorithm
+            if (availableOfficers.length > 0 && locations.length > 0) {
+                const K = availableOfficers.length;
+                const N = locations.length;
+                const costMatrix = Array.from({ length: K }, () => new Float64Array(N));
+                const alph = Math.max(0.0, Math.min(1.0, parseFloat(alpha) || 0.2));
 
-                    if (off.assigned_location_id === loc.id && loc.risk_score >= 70.0) {
-                        cost -= 0.5; // Lock retention bonus
+                for (let i = 0; i < K; i++) {
+                    const off = availableOfficers[i];
+                    const rLimit = off.max_radius_km || defaultMaxRadius;
+                    for (let j = 0; j < N; j++) {
+                        const loc = locations[j];
+                        const dist = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
+                        if (dist > rLimit) {
+                            costMatrix[i][j] = INFEASIBLE_PENALTY + dist;
+                        } else {
+                            let cost = (1.0 - alph) * dist + alph * (100.0 - loc.risk_score) / 10.0;
+                            if (off.assigned_location_id === loc.id && loc.risk_score >= 70.0) {
+                                cost -= 50.0;
+                            }
+                            costMatrix[i][j] = cost;
+                        }
                     }
-
-                    pairs.push({ off, loc, dist, cost });
                 }
-            }
 
-            pairs.sort((a, b) => a.cost - b.cost);
+                const { rowInd, colInd } = solveLinearSumAssignment(costMatrix);
 
-            for (const p of pairs) {
-                if (assignedOfficerIds.has(p.off.id) || coveredLocationIds.has(p.loc.id)) continue;
-                assignedOfficerIds.add(p.off.id);
-                coveredLocationIds.add(p.loc.id);
-                assignments.push({
-                    officer_id: p.off.id,
-                    officer_name: p.off.name,
-                    officer_start: [p.off.current_lat, p.off.current_lon],
-                    location_id: p.loc.id,
-                    location_name: p.loc.name,
-                    location_coords: [p.loc.lat, p.loc.lon],
-                    risk_score: p.loc.risk_score,
-                    distance_km: Math.round(p.dist * 100) / 100
-                });
+                for (let idx = 0; idx < rowInd.length; idx++) {
+                    const i = rowInd[idx];
+                    const j = colInd[idx];
+                    if (costMatrix[i][j] >= INFEASIBLE_PENALTY / 2) continue;
+
+                    const off = availableOfficers[i];
+                    const loc = locations[j];
+                    const dist = haversineDist(off.current_lat, off.current_lon, loc.lat, loc.lon);
+
+                    assignedOfficerIds.add(off.id);
+                    coveredLocationIds.add(loc.id);
+                    assignments.push({
+                        officer_id: off.id,
+                        officer_name: off.name,
+                        officer_start: [off.current_lat, off.current_lon],
+                        location_id: loc.id,
+                        location_name: loc.name,
+                        location_coords: [loc.lat, loc.lon],
+                        risk_score: loc.risk_score,
+                        distance_km: Math.round(dist * 100) / 100
+                    });
+                }
             }
         }
 

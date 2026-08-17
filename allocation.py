@@ -202,9 +202,11 @@ def _allocate_dynamic_priority_6_5(
     Section 6.5 Output -> Section 6.4 Allocation Input Pipeline.
 
     Rules:
-    1. Distance Priority > 6.5 Risk Factor.
+    1. Distance Priority > 6.5 Risk Factor (Global Distance Minimization).
     2. Protect High-Risk Officers: Officers assigned to high-risk zones (risk >= 70) are retained at their post.
-    3. Shortage Protection: Unmanned high-risk spots take priority for dispatch, mobilizing nearest available or low-risk officers.
+    3. Shortage Protection: Unmanned high-risk spots take priority for dispatch.
+    4. Optimal Assignment: Uses bipartite matching (Hungarian Algorithm) to minimize total travel distance
+       across all dispatched officer-location pairs (preventing crossed paths like 71 & 78).
     """
     loc_map = {loc.id: loc for loc in locations}
     assignments = []
@@ -236,37 +238,45 @@ def _allocate_dynamic_priority_6_5(
     uncovered_locations = [loc for loc in locations if loc.id not in covered_location_ids]
     uncovered_locations.sort(key=lambda l: l.risk_score, reverse=True)
 
-    # Step 3: Dispatch unassigned officers prioritizing Distance over 6.5 Risk Factor
-    # For each high-risk location, pick nearest unassigned officer
-    for loc in uncovered_locations:
-        candidate_officers = [off for off in officers if off.id not in assigned_officer_ids]
-        if not candidate_officers:
-            break
+    available_officers = [off for off in officers if off.id not in assigned_officer_ids]
 
-        best_officer = None
-        min_dist = float("inf")
+    if available_officers and uncovered_locations:
+        # Step 3: Select top-priority uncovered locations to match available officer count
+        target_locations = uncovered_locations[:len(available_officers)]
+        K = len(available_officers)
+        N = len(target_locations)
 
-        for off in candidate_officers:
+        INFEASIBLE_PENALTY = 1e6
+        cost_matrix = np.zeros((K, N), dtype=float)
+
+        for i, off in enumerate(available_officers):
             radius_limit = off.max_radius_km if off.max_radius_km is not None else default_max_radius_km
+            for j, loc in enumerate(target_locations):
+                dist = haversine_distance(off.current_lat, off.current_lon, loc.lat, loc.lon)
+                if dist > radius_limit:
+                    cost_matrix[i, j] = INFEASIBLE_PENALTY + dist
+                else:
+                    cost_matrix[i, j] = dist
+
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+
+        for i, j in zip(row_ind, col_ind):
+            if cost_matrix[i, j] >= INFEASIBLE_PENALTY / 2.0:
+                continue
+
+            off = available_officers[i]
+            loc = target_locations[j]
             dist = haversine_distance(off.current_lat, off.current_lon, loc.lat, loc.lon)
 
-            # Primary Priority: Distance of police officer from risk area
-            if dist <= radius_limit and dist < min_dist:
-                min_dist = dist
-                best_officer = off
-
-        if best_officer:
-            assigned_officer_ids.add(best_officer.id)
-            covered_location_ids.add(loc.id)
             assignments.append({
-                "officer_id": best_officer.id,
-                "officer_name": best_officer.name,
-                "officer_start": [round(best_officer.current_lat, 6), round(best_officer.current_lon, 6)],
+                "officer_id": off.id,
+                "officer_name": off.name,
+                "officer_start": [round(off.current_lat, 6), round(off.current_lon, 6)],
                 "location_id": loc.id,
                 "location_name": loc.name,
                 "location_coords": [round(loc.lat, 6), round(loc.lon, 6)],
                 "risk_score": round(loc.risk_score, 2),
-                "distance_km": round(min_dist, 2),
+                "distance_km": round(dist, 2),
                 "protection_status": "dynamically_dispatched"
             })
 
@@ -279,40 +289,50 @@ def _allocate_greedy(
     default_max_radius_km: float
 ) -> List[Dict[str, Any]]:
     """
-    Greedy Strategy:
-    Sorts locations by risk_score, assigns nearest available officer.
+    Greedy Strategy with Global Distance Optimization:
+    Selects top-risk locations, then optimizes total travel distance via bipartite matching.
     """
     sorted_locations = sorted(locations, key=lambda l: l.risk_score, reverse=True)
-    assigned_officer_ids = set()
-    assignments = []
+    if not officers or not sorted_locations:
+        return []
 
-    for loc in sorted_locations:
-        best_officer = None
-        best_dist = float("inf")
+    target_locations = sorted_locations[:len(officers)]
+    K = len(officers)
+    N = len(target_locations)
 
-        for off in officers:
-            if off.id in assigned_officer_ids:
-                continue
-            
-            radius_limit = off.max_radius_km if off.max_radius_km is not None else default_max_radius_km
+    INFEASIBLE_PENALTY = 1e6
+    cost_matrix = np.zeros((K, N), dtype=float)
+
+    for i, off in enumerate(officers):
+        radius_limit = off.max_radius_km if off.max_radius_km is not None else default_max_radius_km
+        for j, loc in enumerate(target_locations):
             dist = haversine_distance(off.current_lat, off.current_lon, loc.lat, loc.lon)
+            if dist > radius_limit:
+                cost_matrix[i, j] = INFEASIBLE_PENALTY + dist
+            else:
+                cost_matrix[i, j] = dist
 
-            if dist <= radius_limit and dist < best_dist:
-                best_dist = dist
-                best_officer = off
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
-        if best_officer:
-            assigned_officer_ids.add(best_officer.id)
-            assignments.append({
-                "officer_id": best_officer.id,
-                "officer_name": best_officer.name,
-                "officer_start": [round(best_officer.current_lat, 6), round(best_officer.current_lon, 6)],
-                "location_id": loc.id,
-                "location_name": loc.name,
-                "location_coords": [round(loc.lat, 6), round(loc.lon, 6)],
-                "risk_score": round(loc.risk_score, 2),
-                "distance_km": round(best_dist, 2)
-            })
+    assignments = []
+    for i, j in zip(row_ind, col_ind):
+        if cost_matrix[i, j] >= INFEASIBLE_PENALTY / 2.0:
+            continue
+
+        off = officers[i]
+        loc = target_locations[j]
+        dist = haversine_distance(off.current_lat, off.current_lon, loc.lat, loc.lon)
+
+        assignments.append({
+            "officer_id": off.id,
+            "officer_name": off.name,
+            "officer_start": [round(off.current_lat, 6), round(off.current_lon, 6)],
+            "location_id": loc.id,
+            "location_name": loc.name,
+            "location_coords": [round(loc.lat, 6), round(loc.lon, 6)],
+            "risk_score": round(loc.risk_score, 2),
+            "distance_km": round(dist, 2)
+        })
 
     return assignments
 
@@ -326,7 +346,7 @@ def _allocate_scipy(
 ) -> List[Dict[str, Any]]:
     """
     Optimal Bipartite Matching:
-    Cost = alpha * (1 - NormalizedRisk) + (1 - alpha) * NormalizedDistance
+    Cost = (1 - alpha) * Distance_km + alpha * (100 - RiskScore) / 10
     Retention Bonus for High Risk: subtracts retention bonus if officer is already covering high-risk spot.
     """
     K = len(officers)
@@ -337,19 +357,6 @@ def _allocate_scipy(
         for j, loc in enumerate(locations):
             D[i, j] = haversine_distance(off.current_lat, off.current_lon, loc.lat, loc.lon)
 
-    risks = np.array([loc.risk_score for loc in locations], dtype=float)
-    min_risk, max_risk = np.min(risks), np.max(risks)
-    if max_risk > min_risk:
-        norm_risk = (risks - min_risk) / (max_risk - min_risk)
-    else:
-        norm_risk = np.ones(N, dtype=float) if max_risk > 0 else np.zeros(N, dtype=float)
-
-    min_dist, max_dist = np.min(D), np.max(D)
-    if max_dist > min_dist:
-        norm_dist = (D - min_dist) / (max_dist - min_dist)
-    else:
-        norm_dist = np.zeros((K, N), dtype=float)
-
     alpha = max(0.0, min(1.0, float(alpha)))
     cost_matrix = np.zeros((K, N), dtype=float)
     INFEASIBLE_PENALTY = 1e6
@@ -359,12 +366,12 @@ def _allocate_scipy(
         for j in range(N):
             loc = locations[j]
             if D[i, j] > radius_limit:
-                cost_matrix[i, j] = INFEASIBLE_PENALTY
+                cost_matrix[i, j] = INFEASIBLE_PENALTY + D[i, j]
             else:
-                cost_ij = alpha * (1.0 - norm_risk[j]) + (1.0 - alpha) * norm_dist[i, j]
+                cost_ij = (1.0 - alpha) * D[i, j] + alpha * (100.0 - loc.risk_score) / 10.0
                 # High Risk Protection Retention Bonus:
                 if off.assigned_location_id == loc.id and loc.risk_score >= high_risk_threshold:
-                    cost_ij -= 0.5  # Heavy retention bonus to prevent moving high-risk officers
+                    cost_ij -= 50.0  # Retention bonus to protect high-risk posted officers
                 cost_matrix[i, j] = cost_ij
 
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
@@ -373,7 +380,7 @@ def _allocate_scipy(
     for i, j in zip(row_ind, col_ind):
         if cost_matrix[i, j] >= INFEASIBLE_PENALTY / 2.0:
             continue
-        
+
         off = officers[i]
         loc = locations[j]
         dist = D[i, j]

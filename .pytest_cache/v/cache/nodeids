@@ -1,0 +1,13 @@
+[
+  "test_allocation.py::test_busy_officers_excluded",
+  "test_allocation.py::test_dynamic_priority_6_5_protection",
+  "test_allocation.py::test_dynamic_priority_distance_over_risk",
+  "test_allocation.py::test_global_distance_optimization_swaps_suboptimal_pairs",
+  "test_allocation.py::test_greedy_strategy",
+  "test_allocation.py::test_haversine_distance",
+  "test_allocation.py::test_max_radius_threshold",
+  "test_allocation.py::test_more_locations_than_officers",
+  "test_allocation.py::test_no_available_officers",
+  "test_allocation.py::test_one_to_one_constraint",
+  "test_allocation.py::test_scipy_strategy_alpha_weighting"
+]
