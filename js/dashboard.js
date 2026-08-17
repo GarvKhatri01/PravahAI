@@ -158,40 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         heatmapGroup.addLayer(_activeHeatLayer);
     }
 
-    /**
-     * Initializes the time-slider and wires it to re-score all junctions live.
-     */
-    function initTimeSlider() {
-        const slider    = document.getElementById('time-slider');
-        const label     = document.getElementById('time-slider-label');
-        if (!slider || !label) return;
 
-        function formatHour(h) {
-            const period = h >= 12 ? 'PM' : 'AM';
-            const h12    = h === 0 ? 12 : h > 12 ? h - 12 : h;
-            return `${String(h12).padStart(2,'0')}:00 ${period}`;
-        }
-
-        function applyHour(h) {
-            _currentHour  = h;
-            label.textContent = formatHour(h);
-
-            // Highlight peak hours
-            const isPeak = (h >= 8 && h <= 10) || (h >= 18 && h <= 21);
-            label.style.color = isPeak ? '#ef4444' : 'var(--color-primary, #7c93ff)';
-
-            // Re-render junction markers, heatmap, and sortable ranking table for this hour
-            renderJunctionMarkers(h);
-            initHeatLayer(h);
-            renderJunctionTable(h);
-        }
-
-        // Set slider to current real hour
-        slider.value = _currentHour;
-        applyHour(_currentHour);
-
-        slider.addEventListener('input', () => applyHour(parseInt(slider.value, 10)));
-    }
 
     // ── SORTABLE JUNCTION RANKING TABLE & CSV EXPORT ──────────────────────────
 
@@ -357,12 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
         window.dispatchSystemAlert('Briefing Exported', `Downloaded ${filename} (${junctions.length} junctions)`, 'info');
     }
 
-    // Initial render of junction markers, heat layer, time slider, and sortable table
+    // Initial render of junction markers, heat layer, and sortable table
     renderJunctionMarkers(_currentHour);
     initHeatLayer(_currentHour);
     renderJunctionTable(_currentHour);
     initTableSorting();
-    initTimeSlider();
 
     // Wire CSV Export button listener
     const btnExportCSV = document.getElementById('btn-export-csv');
