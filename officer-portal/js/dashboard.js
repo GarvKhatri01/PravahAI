@@ -2,89 +2,114 @@
    PravahAI Officer Portal — Dashboard Logic (dashboard.js)
    ========================================================================== */
 
-/* ——————————————————————————————————————————
-   MOCK DATA — simulates backend / admin state
-   —————————————————————————————————————————— */
-
-const OFFICER_DATA = {
-    id: 'B-2247',           // renamed from badge — just the ID
-    name: 'Constable R. Deshmukh',
-    rank: 'Police Constable',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDzh2rsFvAFzyIXKC7FW5Uxn0_xUrHi-1DgnHn58dcq706gjNyfaLRcMWzQoEM2bvFusepFCo9neQBRTFy6BL_WI7yJWb7hgxklR06ZSxuUFDeiSA5tv2qX0DQSnwToz_TmS9LgdgG15rbku0uSA8hEPdR8i8pWeU_SKSKSJVLVoRfBssan351AjedBQI-cuIxJdflxPtQBmdZMLozaGkYNXRgwu292RLnw9Fe09BLVzU2H6BQFasv_bg',
-};
-
-const POSTS_DB = [
-    {
-        id: 'P01',
-        name: 'Zero Mile Stone Junction',
-        zone: 'Zone A — Central',
-        sector: 'Sector 3',
-        riskScore: 78,
-        riskLevel: 'high',
-        congestionStatus: 'Heavy',
-        activeIncidents: 3,
-        description: 'Critical 6-way intersection. High footfall & vehicle volume throughout the day. VIP convoy routes pass through. Stay vigilant.',
-        instructions: 'Maintain lane discipline at all approaches. Coordinate with Unit 42 on the western arm. Report any obstruction immediately.',
-        incidents: [
-            { id: 'I1', type: 'accident',    title: 'Multi-vehicle Accident',  desc: 'Near eastern approach — lanes blocked', time: '2 min ago',  icon: 'car_crash',       color: '#dc2626' },
-            { id: 'I2', type: 'traffic_jam', title: 'Severe Traffic Jam',      desc: 'Northbound backup > 500m',             time: '8 min ago',  icon: 'traffic',         color: '#d97706' },
-            { id: 'I3', type: 'vip',         title: 'VIP Convoy Movement',     desc: 'Route clearance required 14:30–15:00', time: '15 min ago', icon: 'directions_car',  color: '#1d4ed8' },
-        ],
-    },
-    {
-        id: 'P02',
-        name: 'Variety Square',
-        zone: 'Zone B — East',
-        sector: 'Sector 7',
-        riskScore: 52,
-        riskLevel: 'medium',
-        congestionStatus: 'Moderate',
-        activeIncidents: 1,
-        description: 'Commercial area. Moderate congestion during peak hours. Market days (Tue/Fri) see elevated pedestrian flow.',
-        instructions: 'Monitor vendor encroachments on east side. Alert HQ if rally spillover reaches the square.',
-        incidents: [
-            { id: 'I4', type: 'protest', title: 'Protest Gathering', desc: 'Approx 200 civilians — peaceful but monitored', time: '5 min ago', icon: 'group', color: '#7c3aed' },
-        ],
-    },
-    {
-        id: 'P03',
-        name: 'Sitabuldi Interchange',
-        zone: 'Zone A — Central',
-        sector: 'Sector 1',
-        riskScore: 31,
-        riskLevel: 'low',
-        congestionStatus: 'Clear',
-        activeIncidents: 0,
-        description: 'Elevated flyover interchange. Cameras operational. Low incident history. Routine patrol sufficient.',
-        instructions: 'Standard patrol cycle. Check under-bridge area every 90 minutes.',
-        incidents: [],
-    },
-];
-
-// Alert items per post — only task-type alerts (no shift change reminder)
-const ALERTS_BY_POST = {
-    P01: [
-        { id: 'A1', type: 'critical', title: 'Accident — Lanes Blocked',   desc: 'Multi-vehicle collision near eastern approach. Ambulance dispatched.', time: '2 min ago',  votes: 0, totalOfficers: 4, resolved: false },
-        { id: 'A2', type: 'warning',  title: 'Signal Failure',              desc: 'Traffic light unit #3 offline. Manual control required.',              time: '11 min ago', votes: 0, totalOfficers: 4, resolved: false },
-    ],
-    P02: [
-        { id: 'A4', type: 'warning',  title: 'Protest Crowd',              desc: 'Approx 200 civilians gathering — remain vigilant.',                    time: '5 min ago',  votes: 0, totalOfficers: 3, resolved: false },
-    ],
-    P03: [],
-};
+const PRAVAH_API = 'http://localhost:3000';
 
 /* ——————————————————————————————————————————
    STATE
    —————————————————————————————————————————— */
-let currentPost         = null;
+let liveOfficerData     = null;  // officer row from DB
+let currentPost         = null;  // normalised post object for rendering
+let liveIncidents       = [];    // raw incidents from DB for this zone
 let onDuty              = true;
-let pendingReassignment = null;   // new post after crisis modal acknowledged; awaiting Mark Arrived
-let myVotes             = {};     // alertId → true if this officer already voted
+let pendingReassignment = null;  // new post after crisis modal acknowledged
+let myVotes             = {};    // alertId → true if already voted
+
+/* ——————————————————————————————————————————
+   LIVE API SYNC
+   —————————————————————————————————————————— */
+
+/**
+ * Fetches the officer's live details and their zone's active incidents from the API.
+ * Maps the DB structure to the shape expected by the render functions.
+ */
+async function syncWithCommandCenter() {
+    const unitId = sessionStorage.getItem('officer_unit_id');
+    if (!unitId) return;
+
+    try {
+        // 1. Officer details + zone + incidents from deployment endpoint
+        const [deployRes, riskRes] = await Promise.all([
+            fetch(`${PRAVAH_API}/api/deployment/officer/${unitId}`),
+            fetch(`${PRAVAH_API}/api/risk/score`)
+        ]);
+
+        if (!deployRes.ok) throw new Error('Deployment API error');
+        const deployData = await deployRes.json();
+        const riskData   = riskRes.ok ? await riskRes.json() : null;
+
+        liveOfficerData = deployData.officer;
+        liveIncidents   = deployData.incidents || [];
+        const zone      = deployData.zone || {};
+
+        // Find this zone's score from the command-center risk data
+        let zoneScore = 0;
+        let zoneCongestion = 'Unknown';
+        if (riskData && riskData.zoneScores) {
+            const matchedZone = riskData.zoneScores.find(z =>
+                z.zone.toLowerCase().includes(zone.zone_name?.toLowerCase() || '')
+            );
+            if (matchedZone) zoneScore = matchedZone.score;
+        }
+
+        // Map traffic corridors to congestion status
+        if (riskData && riskData.meta) {
+            const avgV = riskData.meta.avgVelocity || 0;
+            zoneCongestion = avgV >= 40 ? 'Clear' : avgV >= 25 ? 'Moderate' : avgV >= 15 ? 'Heavy' : 'Gridlock';
+        }
+
+        // Normalise into the post shape used by render functions
+        const riskLevel = zoneScore >= 65 ? 'high' : zoneScore >= 35 ? 'medium' : 'low';
+        currentPost = {
+            id:               liveOfficerData.unit_id,
+            name:             zone.zone_name || liveOfficerData.sector,
+            zone:             liveOfficerData.squad || 'Field Unit',
+            sector:           liveOfficerData.sector,
+            riskScore:        zoneScore,
+            riskLevel,
+            congestionStatus: zoneCongestion,
+            activeIncidents:  liveIncidents.length,
+            description:      zone.is_high_risk
+                ? 'High-risk designated zone. Stay vigilant and maintain frequent contact with HQ.'
+                : 'Routine monitoring zone. Report any unusual activity immediately.',
+            instructions:     `Historical risk index: ${zone.historical_risk ?? 'N/A'}. ` +
+                              `Active incidents in zone: ${liveIncidents.length}.`,
+            incidents:        liveIncidents
+        };
+
+        // Update badge status indicator
+        updateSyncBadge(true);
+
+    } catch (err) {
+        console.warn('[Officer Portal] Live sync failed, using last known state:', err.message);
+        updateSyncBadge(false);
+
+        // If no currentPost yet, create a safe fallback from sessionStorage
+        if (!currentPost) {
+            const unitId = sessionStorage.getItem('officer_unit_id') || 'Unknown';
+            currentPost = {
+                id: unitId, name: unitId, zone: '—', sector: '—',
+                riskScore: 0, riskLevel: 'low', congestionStatus: '—',
+                activeIncidents: 0, description: 'Offline — unable to reach command center.',
+                instructions: 'Check network connection.', incidents: []
+            };
+        }
+    }
+}
+
+/** Shows a small live/offline badge in the header */
+function updateSyncBadge(isLive) {
+    const badge = document.getElementById('sync-badge');
+    if (!badge) return;
+    badge.textContent = isLive ? '🟢 Live' : '🟡 Offline';
+    badge.title       = isLive
+        ? 'Connected to PravahAI Command Center'
+        : 'Cannot reach API — showing last known data';
+}
 
 /* ——————————————————————————————————————————
    INIT
    —————————————————————————————————————————— */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Guard — redirect to login if not authenticated
     const loggedIn = sessionStorage.getItem('officer_logged_in');
     if (!loggedIn) {
@@ -92,12 +117,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const savedPostId = sessionStorage.getItem('officer_post') || POSTS_DB[0].id;
-    currentPost = POSTS_DB.find(p => p.id === savedPostId) || POSTS_DB[0];
+    // Show loading skeleton while fetching live data
+    showLoadingSkeleton();
 
+    // Fetch live data from command center
+    await syncWithCommandCenter();
+
+    // Render everything from live data
     renderOfficerProfile();
     renderPostInfo(currentPost);
-    renderAlerts(getAlertsForPost(currentPost.id));
+    renderAlerts(getAlertsForPost());
     renderNotificationDropdown(currentPost);
     initNotifBadge(currentPost);
     initNotifDropdownToggle();
@@ -109,25 +138,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Listen for real admin-triggered reassignment via localStorage
     initAdminReassignmentListener();
+
+    // Poll for live updates every 30 seconds
+    setInterval(async () => {
+        await syncWithCommandCenter();
+        renderPostInfo(currentPost);
+        renderAlerts(getAlertsForPost());
+    }, 30000);
 });
+
+function showLoadingSkeleton() {
+    setTextById('officer-name',   'Loading…');
+    setTextById('post-name',      'Connecting to Command Center…');
+    setTextById('post-risk-score','—');
+}
 
 /* ——————————————————————————————————————————
    OFFICER PROFILE
    —————————————————————————————————————————— */
 function renderOfficerProfile() {
-    setTextById('officer-name', OFFICER_DATA.name);
-    setTextById('officer-rank', OFFICER_DATA.rank);
-    // Show just the ID — no "Badge:" prefix
-    setTextById('officer-id', OFFICER_DATA.id);
-
-    const avatarEl = document.getElementById('officer-avatar');
-    if (avatarEl) avatarEl.src = OFFICER_DATA.avatar;
+    if (!liveOfficerData) return;
+    setTextById('officer-name', liveOfficerData.name);
+    setTextById('officer-rank', liveOfficerData.squad || 'Field Officer');
+    setTextById('officer-id',   liveOfficerData.unit_id);
+    // Keep existing avatar — no avatar stored in DB
 }
 
 /* ——————————————————————————————————————————
    POST INFO
    —————————————————————————————————————————— */
 function renderPostInfo(post) {
+    if (!post) return;
     setTextById('post-name',         post.name);
     setTextById('post-zone',         post.zone);
     setTextById('post-sector',       post.sector);
@@ -152,10 +193,29 @@ function renderPostInfo(post) {
 }
 
 /* ——————————————————————————————————————————
-   ALERTS — with "Mark Task Complete" voting
+   ALERTS — built from live DB incidents
    —————————————————————————————————————————— */
-function getAlertsForPost(postId) {
-    return ALERTS_BY_POST[postId] || [];
+function getAlertsForPost() {
+    // Convert live DB incidents to the alert format used by renderAlerts
+    return liveIncidents.map((inc, i) => ({
+        id:           `live-${inc.id || i}`,
+        type:         inc.severity === 'Critical' ? 'critical' : 'warning',
+        title:        inc.type ? `${inc.type} — ${inc.location || ''}` : (inc.description || 'Incident'),
+        desc:         inc.description || '',
+        time:         inc.reported_at
+            ? timeAgo(new Date(inc.reported_at))
+            : 'Recently',
+        votes:        0,
+        totalOfficers:4,
+        resolved:     inc.status === 'Resolved'
+    }));
+}
+
+function timeAgo(date) {
+    const mins = Math.round((Date.now() - date.getTime()) / 60000);
+    if (mins < 1)  return 'Just now';
+    if (mins < 60) return `${mins} min ago`;
+    return `${Math.round(mins / 60)} hr ago`;
 }
 
 function renderAlerts(alerts) {
