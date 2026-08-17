@@ -38,20 +38,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dark/Light tile layers constrained to Nagpur bounds
     const tileLayers = {
-        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, minZoom: 11, bounds: NAGPUR_BOUNDS }),
-        light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, minZoom: 11, bounds: NAGPUR_BOUNDS })
+        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 18,
+            minZoom: 11,
+            bounds: NAGPUR_BOUNDS,
+            subdomains: 'abcd'
+        }),
+        light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 18,
+            minZoom: 11,
+            bounds: NAGPUR_BOUNDS,
+            subdomains: 'abcd'
+        })
     };
 
-    // Set initial theme layer
-    const currentTheme = localStorage.getItem('theme') || 'light';
-    tileLayers[currentTheme].addTo(map);
+    // Set initial theme layer synced with DOM data-theme attribute
+    const currentTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light';
+    if (tileLayers[currentTheme]) {
+        tileLayers[currentTheme].addTo(map);
+    } else {
+        tileLayers.light.addTo(map);
+    }
 
     // Listen to theme changes to dynamically swap tiles
     window.addEventListener('themechanged', (e) => {
         const theme = e.detail;
-        map.removeLayer(tileLayers.dark);
-        map.removeLayer(tileLayers.light);
-        tileLayers[theme].addTo(map);
+        if (map.hasLayer(tileLayers.dark)) map.removeLayer(tileLayers.dark);
+        if (map.hasLayer(tileLayers.light)) map.removeLayer(tileLayers.light);
+        if (tileLayers[theme]) {
+            tileLayers[theme].addTo(map);
+        }
     });
 
     // Add zoom control at bottom right
