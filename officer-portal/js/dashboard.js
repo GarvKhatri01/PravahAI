@@ -9,55 +9,39 @@ const PRAVAH_API = 'http://localhost:3000';
    (Vercel deployment has no backend server)
    —————————————————————————————————————————— */
 
+/** Maps unit_id → officer profile */
 const OFFICERS_DB = {
-    'B-2247': { id: 'B-2247', name: 'Constable R. Deshmukh', rank: 'Police Constable',  postId: 'P01' },
-    'B-1012': { id: 'B-1012', name: 'SI A. Kulkarni',         rank: 'Sub-Inspector',      postId: 'P02' },
-    'B-0033': { id: 'B-0033', name: 'Inspector V. Bendre',    rank: 'Inspector',           postId: 'P03' },
+    'U-001': { id: 'U-001', name: 'Insp. Sanjay Patil',      rank: 'Inspector',          postId: 'LOC_01' },
+    'U-002': { id: 'U-002', name: 'SI Ramesh Kumar',          rank: 'Sub-Inspector',      postId: 'LOC_02' },
+    'U-003': { id: 'U-003', name: 'Const. Priya Deshpande',   rank: 'Police Constable',   postId: 'LOC_03' },
+    'U-004': { id: 'U-004', name: 'Insp. Amit Thakur',        rank: 'Inspector',          postId: 'LOC_04' },
+    'U-005': { id: 'U-005', name: 'SI Neha Joshi',            rank: 'Sub-Inspector',      postId: 'LOC_05' },
+    'U-006': { id: 'U-006', name: 'Const. Vikram Rao',        rank: 'Police Constable',   postId: 'LOC_06' },
+    'U-008': { id: 'U-008', name: 'Const. Sunita Borde',      rank: 'Police Constable',   postId: 'LOC_07' },
 };
 
+/** All post locations — matches allocationVisualizer.js hotspots */
 const POSTS_DB = [
-    {
-        id: 'P01', name: 'Zero Mile Stone Junction',
-        zone: 'Zone A — Central', sector: 'Sector 3',
-        riskScore: 78, riskLevel: 'high', congestionStatus: 'Heavy', activeIncidents: 3,
-        description: 'Critical 6-way intersection. High footfall & vehicle volume throughout the day. VIP convoy routes pass through. Stay vigilant.',
-        instructions: 'Maintain lane discipline at all approaches. Coordinate with Unit 42 on the western arm. Report any obstruction immediately.',
-        incidents: [
-            { id: 'I1', type: 'accident',    title: 'Multi-vehicle Accident',  desc: 'Near eastern approach — lanes blocked', time: '2 min ago',  icon: 'car_crash',      color: '#dc2626' },
-            { id: 'I2', type: 'traffic_jam', title: 'Severe Traffic Jam',      desc: 'Northbound backup > 500m',             time: '8 min ago',  icon: 'traffic',        color: '#d97706' },
-            { id: 'I3', type: 'vip',         title: 'VIP Convoy Movement',     desc: 'Route clearance required 14:30–15:00', time: '15 min ago', icon: 'directions_car', color: '#1d4ed8' },
-        ],
-    },
-    {
-        id: 'P02', name: 'Variety Square',
-        zone: 'Zone B — East', sector: 'Sector 7',
-        riskScore: 52, riskLevel: 'medium', congestionStatus: 'Moderate', activeIncidents: 1,
-        description: 'Commercial area. Moderate congestion during peak hours. Market days (Tue/Fri) see elevated pedestrian flow.',
-        instructions: 'Monitor vendor encroachments on east side. Alert HQ if rally spillover reaches the square.',
-        incidents: [
-            { id: 'I4', type: 'protest', title: 'Protest Gathering', desc: 'Approx 200 civilians — peaceful but monitored', time: '5 min ago', icon: 'group', color: '#7c3aed' },
-        ],
-    },
-    {
-        id: 'P03', name: 'Sitabuldi Interchange',
-        zone: 'Zone A — Central', sector: 'Sector 1',
-        riskScore: 31, riskLevel: 'low', congestionStatus: 'Clear', activeIncidents: 0,
-        description: 'Elevated flyover interchange. Cameras operational. Low incident history. Routine patrol sufficient.',
-        instructions: 'Standard patrol cycle. Check under-bridge area every 90 minutes.',
-        incidents: [],
-    },
+    { id: 'LOC_01', name: 'Zero Mile Stone Junction',          zone: 'Zone A — Central',  sector: 'Sector 3', riskScore: 96, riskLevel: 'high',   congestionStatus: 'Gridlock', activeIncidents: 3, description: 'Critical 6-way intersection. High footfall & vehicle volume. VIP convoy routes pass through. Stay vigilant.', instructions: 'Maintain lane discipline at all approaches. Coordinate with adjacent units. Report any obstruction immediately.', incidents: [ { id: 'N1', title: 'Multi-vehicle Accident', desc: 'Near eastern approach — lanes blocked', time: '2 min ago', icon: 'car_crash', color: '#dc2626' }, { id: 'N2', title: 'Severe Traffic Jam', desc: 'Northbound backup > 500m', time: '8 min ago', icon: 'traffic', color: '#d97706' }, { id: 'N3', title: 'VIP Convoy Movement', desc: 'Route clearance required 14:30–15:00', time: '15 min ago', icon: 'directions_car', color: '#1d4ed8' } ] },
+    { id: 'LOC_02', name: 'Variety Square Interchange',        zone: 'Zone B — East',     sector: 'Sector 7', riskScore: 89, riskLevel: 'high',   congestionStatus: 'Heavy',    activeIncidents: 2, description: 'High-volume interchange. Market and commercial spillover common. Frequent unauthorized parking.', instructions: 'Ensure signal compliance. Monitor for vendor encroachments. Alert HQ on any surge.', incidents: [ { id: 'N4', title: 'Signal Malfunction', desc: 'Junction B-2 — traffic light unit offline', time: '5 min ago', icon: 'traffic_jam', color: '#dc2626' }, { id: 'N5', title: 'Unauthorized Parking', desc: 'Heavy goods vehicles blocking lane 3', time: '20 min ago', icon: 'local_parking', color: '#d97706' } ] },
+    { id: 'LOC_03', name: 'Sitabuldi Metro Interchange',       zone: 'Zone A — Central',  sector: 'Sector 1', riskScore: 92, riskLevel: 'high',   congestionStatus: 'Heavy',    activeIncidents: 2, description: 'Elevated metro interchange. High pedestrian flow during peak hours. Pickpocketing incidents reported.', instructions: 'Station personnel at all 4 exits. Coordinate with Metro Security. Strict no-hawker zone enforcement.', incidents: [ { id: 'N6', title: 'Crowd Surge — Platform 2', desc: 'Overcrowding reported during peak hour', time: '3 min ago', icon: 'group', color: '#dc2626' }, { id: 'N7', title: 'Suspicious Activity', desc: 'Unattended bag near east exit', time: '12 min ago', icon: 'warning', color: '#d97706' } ] },
+    { id: 'LOC_04', name: 'Wardha Road Express Corridor',      zone: 'Zone C — South',    sector: 'Sector 9', riskScore: 76, riskLevel: 'high',   congestionStatus: 'Heavy',    activeIncidents: 1, description: 'High-speed arterial road. Frequent overspeeding and overtaking violations.', instructions: 'Deploy speed detection at km marker 14. Monitor highway ramps.', incidents: [ { id: 'N8', title: 'Overspeeding Convoy', desc: '3 heavy vehicles — licence noted, action pending', time: '10 min ago', icon: 'speed', color: '#d97706' } ] },
+    { id: 'LOC_05', name: 'Dharampeth Commercial Market',      zone: 'Zone B — West',     sector: 'Sector 5', riskScore: 64, riskLevel: 'medium', congestionStatus: 'Moderate', activeIncidents: 1, description: 'Busy commercial belt. High footfall on weekends. Vendor disputes common.', instructions: 'Maintain visible patrol presence. Mediate vendor encroachment disputes proactively.', incidents: [ { id: 'N9', title: 'Vendor Dispute', desc: 'Altercation between 2 shops — de-escalation needed', time: '7 min ago', icon: 'store', color: '#d97706' } ] },
+    { id: 'LOC_06', name: 'Central Railway Station West Gate', zone: 'Zone A — Central',  sector: 'Sector 2', riskScore: 81, riskLevel: 'high',   congestionStatus: 'Heavy',    activeIncidents: 2, description: 'Major transit node. High theft and crowd-related incidents. Hawker encroachment persistent.', instructions: 'Maintain presence at all 6 gates. Coordinate with Railway Police. Monitor CCTV feed regularly.', incidents: [ { id: 'N10', title: 'Pickpocket Reported', desc: 'Victim near platform 4 — suspect at large', time: '4 min ago', icon: 'person_search', color: '#dc2626' }, { id: 'N11', title: 'Crowd Overflow — Platform 1', desc: 'Delayed train — platform overcrowded', time: '18 min ago', icon: 'group', color: '#d97706' } ] },
+    { id: 'LOC_07', name: 'Sadar Bazaar Promenade',            zone: 'Zone B — North',    sector: 'Sector 6', riskScore: 58, riskLevel: 'medium', congestionStatus: 'Moderate', activeIncidents: 0, description: 'Heritage promenade market. Light to moderate congestion. Generally peaceful.', instructions: 'Standard patrol every 45 minutes. Watch for illegal hawkers after 8PM.', incidents: [] },
 ];
 
+/** Static alerts per post for offline/Vercel mode */
 const ALERTS_BY_POST = {
-    P01: [
-        { id: 'A1', type: 'critical', title: 'Accident — Lanes Blocked',  desc: 'Multi-vehicle collision near eastern approach. Ambulance dispatched.', time: '2 min ago',  votes: 0, totalOfficers: 4, resolved: false },
-        { id: 'A2', type: 'warning',  title: 'Signal Failure',             desc: 'Traffic light unit #3 offline. Manual control required.',              time: '11 min ago', votes: 0, totalOfficers: 4, resolved: false },
-    ],
-    P02: [
-        { id: 'A4', type: 'warning',  title: 'Protest Crowd',             desc: 'Approx 200 civilians gathering — remain vigilant.',                    time: '5 min ago',  votes: 0, totalOfficers: 3, resolved: false },
-    ],
-    P03: [],
+    LOC_01: [ { id: 'A_01_1', type: 'critical', title: 'Accident — Lanes Blocked',   desc: 'Multi-vehicle collision near eastern approach. Ambulance dispatched.',              time: '2 min ago',  votes: 0, totalOfficers: 4, resolved: false }, { id: 'A_01_2', type: 'warning', title: 'Signal Failure',               desc: 'Traffic light unit #3 offline. Manual control required.',                         time: '11 min ago', votes: 0, totalOfficers: 4, resolved: false } ],
+    LOC_02: [ { id: 'A_02_1', type: 'critical', title: 'Signal Malfunction',          desc: 'Junction B-2 offline — dangerous free-flow traffic.',                              time: '5 min ago',  votes: 0, totalOfficers: 3, resolved: false }, { id: 'A_02_2', type: 'warning', title: 'Lane Blockage',                desc: 'HGVs blocking lane 3 at south ramp.',                                             time: '20 min ago', votes: 0, totalOfficers: 3, resolved: false } ],
+    LOC_03: [ { id: 'A_03_1', type: 'critical', title: 'Crowd Surge — Platform 2',   desc: 'Overcrowding — risk of crush. Immediate crowd management required.',               time: '3 min ago',  votes: 0, totalOfficers: 4, resolved: false }, { id: 'A_03_2', type: 'warning', title: 'Unattended Bag — East Exit',  desc: 'Suspicious object reported. Bomb disposal squad alerted.',                        time: '12 min ago', votes: 0, totalOfficers: 4, resolved: false } ],
+    LOC_04: [ { id: 'A_04_1', type: 'warning',  title: 'Overspeeding Violation',     desc: '3 heavy vehicles flagged. FIR filing in progress.',                                time: '10 min ago', votes: 0, totalOfficers: 3, resolved: false } ],
+    LOC_05: [ { id: 'A_05_1', type: 'warning',  title: 'Vendor Dispute',             desc: 'De-escalation ongoing. Backup requested by beat officer.',                         time: '7 min ago',  votes: 0, totalOfficers: 3, resolved: false } ],
+    LOC_06: [ { id: 'A_06_1', type: 'critical', title: 'Pickpocket Incident',        desc: 'Victim near platform 4. Suspect in blue shirt — last seen near gate 3.',           time: '4 min ago',  votes: 0, totalOfficers: 4, resolved: false }, { id: 'A_06_2', type: 'warning', title: 'Platform Overcrowding',       desc: 'Train delayed 40 min — platform 1 at 180% capacity.',                            time: '18 min ago', votes: 0, totalOfficers: 4, resolved: false } ],
+    LOC_07: [],
 };
+
 
 /* ——————————————————————————————————————————
    STATE
