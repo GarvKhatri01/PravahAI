@@ -18,16 +18,28 @@ document.addEventListener('DOMContentLoaded', () => {
         freeFlowVelocity:    55
     });
 
-    // Initialize Leaflet Map
+    // Strict Nagpur Geographical Bounding Box
+    const NAGPUR_BOUNDS = [
+        [20.95, 78.90], // South-West (Wardha Rd / Airport approach outer border)
+        [21.30, 79.30]  // North-East (Kamptee / Kanhan approach outer border)
+    ];
+
+    // Initialize Leaflet Map strictly locked to Nagpur
     const map = L.map('map-viewport', {
         zoomControl: false,
-        attributionControl: false
-    }).setView([21.1458, 79.0882], 13);
+        attributionControl: false,
+        minZoom: 11,
+        maxZoom: 18,
+        maxBounds: NAGPUR_BOUNDS,
+        maxBoundsViscosity: 1.0
+    }).setView([21.1458, 79.0882], 12.5);
 
-    // Dark/Light tile layers
+    window.map = map;
+
+    // Dark/Light tile layers constrained to Nagpur bounds
     const tileLayers = {
-        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }),
-        light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 })
+        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, minZoom: 11, bounds: NAGPUR_BOUNDS }),
+        light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, minZoom: 11, bounds: NAGPUR_BOUNDS })
     };
 
     // Set initial theme layer
@@ -47,7 +59,308 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const markersGroup  = L.layerGroup().addTo(map);
     const corridorsGroup = L.layerGroup().addTo(map);
-    const heatmapGroup   = L.layerGroup(); // NOT added to map by default — toggled on demand
+    const junctionGroup  = L.layerGroup().addTo(map); // L.circleMarker per junction
+    const heatmapGroup   = L.layerGroup();            // leaflet.heat layer — toggled via toolbar
+
+    // ── JUNCTION RISK ENGINE INTEGRATION ─────────────────────────────────────
+
+    let _activeHeatLayer = null;
+    let _currentHour     = new Date().getHours();
+
+    /**
+     * Renders 25 Nagpur junctions as L.circleMarkers.
+     * Color & radius adapt to the 1–10 junction risk score.
+     * Green (1-3), Yellow/Orange (4-7), Red (8-10).
+     */
+    function renderJunctionMarkers(hour) {
+        junctionGroup.clearLayers();
+
+        const scores = RiskEngine.computeJunctionScores(hour);
+
+        scores.forEach(j => {
+            // Severity color + radius
+            let color, radius;
+            if (j.score >= 8)       { color = '#dc2626'; radius = 14; }  // Critical — Red
+            else if (j.score >= 4)  { color = '#f59e0b'; radius = 10; }  // Elevated — Yellow/Amber
+            else                    { color = '#22c55e'; radius = 7;  }  // Clear — Green
+
+            const circle = L.circleMarker([j.lat, j.lng], {
+                radius,
+                fillColor:   color,
+                color:       '#fff',
+                weight:      1.5,
+                opacity:     1,
+                fillOpacity: 0.82
+            });
+
+            // Rich popup — score breakdown
+            const timeSuffix = hour !== undefined ? `${String(hour).padStart(2,'0')}:00` : 'Now';
+            const peakNote   = (hour >= 8 && hour <= 10) ? '🔺 Morning Peak'
+                             : (hour >= 18 && hour <= 21) ? '🔺 Evening Peak'
+                             : '⬤ Off-Peak';
+
+            circle.bindPopup(`
+                <div style="width:240px; font-family: Inter, sans-serif; padding: 4px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid ${color}; padding-bottom:6px; margin-bottom:8px;">
+                        <strong style="font-size:13px;">${j.name}</strong>
+                        <span style="background:${color}; color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px;">Risk ${j.score}/10</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap: 5px 10px; font-size:11px; color:#4b5563; margin-bottom:8px;">
+                        <div><b>Road Type:</b> ${j.roadType}</div>
+                        <div><b>Time:</b> ${timeSuffix} ${peakNote}</div>
+                        <div><b>Accidents/yr:</b> ${j.historicalAccidents}</div>
+                        <div><b>Daily Volume:</b> ${(j.dailyTrafficVolume/1000).toFixed(0)}k</div>
+                        <div><b>Lighting:</b> ${Math.round(j.lightingQuality * 100)}%</div>
+                        <div><b>Time Factor:</b> ×${j.timeFactor}</div>
+                    </div>
+                    <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:#9ca3af; margin-bottom:4px;">Score Breakdown (1–10 scale)</div>
+                    ${[
+                        ['Accident History',  j.accidentNorm,    0.3],
+                        ['Congestion Level',  j.congestionNorm,  0.3],
+                        ['Lighting Penalty',  j.lightingPenalty, 0.2],
+                        ['Time Factor',       j.timeNorm,        0.2]
+                    ].map(([label, val, w]) => `
+                        <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
+                            <span style="font-size:10px; color:#6b7280; width:110px; flex-shrink:0;">${label} (w=${w})</span>
+                            <div style="flex:1; background:#e5e7eb; border-radius:4px; height:5px; overflow:hidden;">
+                                <div style="height:100%; width:${Math.round(val*100)}%; background:${color}; border-radius:4px;"></div>
+                            </div>
+                            <span style="font-size:10px; font-weight:700; color:#111; width:28px; text-align:right;">${Math.round(val*100)}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `, { maxWidth: 270 });
+
+            circle.addTo(junctionGroup);
+        });
+    }
+
+    /**
+     * Creates (or replaces) the leaflet.heat layer from current junction risk scores.
+     * Intensity is mapped from score (1–10) → heatmap weight (0.1–1.0).
+     */
+    function initHeatLayer(hour) {
+        // Remove old heat layer from map/group if it exists
+        if (_activeHeatLayer) {
+            heatmapGroup.removeLayer(_activeHeatLayer);
+        }
+
+        const scores   = RiskEngine.computeJunctionScores(hour);
+        const heatData = scores.map(j => [j.lat, j.lng, j.score / 10]);
+
+        _activeHeatLayer = L.heatLayer(heatData, {
+            radius:   22,
+            blur:     15,
+            maxZoom:  17,
+            gradient: { 0.4: 'blue', 0.65: 'lime', 0.85: 'orange', 1.0: 'red' }
+        });
+
+        heatmapGroup.addLayer(_activeHeatLayer);
+    }
+
+    /**
+     * Initializes the time-slider and wires it to re-score all junctions live.
+     */
+    function initTimeSlider() {
+        const slider    = document.getElementById('time-slider');
+        const label     = document.getElementById('time-slider-label');
+        if (!slider || !label) return;
+
+        function formatHour(h) {
+            const period = h >= 12 ? 'PM' : 'AM';
+            const h12    = h === 0 ? 12 : h > 12 ? h - 12 : h;
+            return `${String(h12).padStart(2,'0')}:00 ${period}`;
+        }
+
+        function applyHour(h) {
+            _currentHour  = h;
+            label.textContent = formatHour(h);
+
+            // Highlight peak hours
+            const isPeak = (h >= 8 && h <= 10) || (h >= 18 && h <= 21);
+            label.style.color = isPeak ? '#ef4444' : 'var(--color-primary, #7c93ff)';
+
+            // Re-render junction markers, heatmap, and sortable ranking table for this hour
+            renderJunctionMarkers(h);
+            initHeatLayer(h);
+            renderJunctionTable(h);
+        }
+
+        // Set slider to current real hour
+        slider.value = _currentHour;
+        applyHour(_currentHour);
+
+        slider.addEventListener('input', () => applyHour(parseInt(slider.value, 10)));
+    }
+
+    // ── SORTABLE JUNCTION RANKING TABLE & CSV EXPORT ──────────────────────────
+
+    let _sortState = { col: 'score', asc: false };
+
+    /**
+     * Renders the sortable junction rankings side-panel table.
+     */
+    function renderJunctionTable(hour) {
+        const tbody = document.getElementById('junction-rankings-tbody');
+        if (!tbody) return;
+
+        let junctions = RiskEngine.computeJunctionScores(hour !== undefined ? hour : _currentHour);
+
+        // Pre-assign rank based on score descending
+        const tempSorted = [...junctions].sort((a, b) => b.score - a.score);
+        const rankMap = new Map();
+        tempSorted.forEach((j, i) => rankMap.set(j.name, i + 1));
+        junctions.forEach(j => j.rank = rankMap.get(j.name));
+
+        // Sort by active column state
+        junctions.sort((a, b) => {
+            let valA = _sortState.col === 'volume' ? a.dailyTrafficVolume : a[_sortState.col];
+            let valB = _sortState.col === 'volume' ? b.dailyTrafficVolume : b[_sortState.col];
+
+            if (_sortState.col === 'trend') {
+                valA = a.trend.text;
+                valB = b.trend.text;
+            }
+
+            if (typeof valA === 'string') {
+                return _sortState.asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            return _sortState.asc ? valA - valB : valB - valA;
+        });
+
+        tbody.innerHTML = junctions.map(j => `
+            <tr class="junction-row" data-lat="${j.lat}" data-lng="${j.lng}" style="border-bottom: 1px solid var(--color-outline-variant); cursor: pointer; transition: background 0.15s ease;">
+                <td style="padding: 7px 10px; font-weight: 700; color: var(--color-on-surface-variant); width: 28px;">${j.rank}</td>
+                <td style="padding: 7px 10px; font-weight: 600; color: var(--color-on-surface); max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${j.name}">
+                    ${j.name}
+                </td>
+                <td style="padding: 7px 10px; font-weight: 800;">
+                    <span style="background: ${j.label.color}22; color: ${j.label.color}; padding: 2px 7px; border-radius: 10px; border: 1px solid ${j.label.color}44; font-size: 10px;">
+                        ${j.score}/10
+                    </span>
+                </td>
+                <td style="padding: 7px 10px; font-weight: 600; color: ${j.trend.color}; display: flex; align-items: center; gap: 4px;">
+                    <span class="material-symbols-outlined" style="font-size: 14px;">${j.trend.icon}</span>
+                    <span>${j.trend.text}</span>
+                </td>
+                <td style="padding: 7px 10px; color: var(--color-on-surface-variant); text-transform: capitalize;">
+                    ${j.roadType}
+                </td>
+            </tr>
+        `).join('');
+
+        // Row click event: Fly to junction location on map and open popup
+        tbody.querySelectorAll('.junction-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const lat = parseFloat(row.dataset.lat);
+                const lng = parseFloat(row.dataset.lng);
+                map.flyTo([lat, lng], 15, { duration: 1.0 });
+
+                junctionGroup.eachLayer(layer => {
+                    if (layer.getLatLng) {
+                        const l = layer.getLatLng();
+                        if (Math.abs(l.lat - lat) < 0.0001 && Math.abs(l.lng - lng) < 0.0001) {
+                            layer.openPopup();
+                        }
+                    }
+                });
+            });
+        });
+    }
+
+    /**
+     * Initializes column sorting listeners on table headers.
+     */
+    function initTableSorting() {
+        const tableHeader = document.querySelector('#junction-rankings-table thead');
+        if (!tableHeader) return;
+
+        tableHeader.querySelectorAll('th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const col = th.dataset.sort;
+                if (_sortState.col === col) {
+                    _sortState.asc = !_sortState.asc;
+                } else {
+                    _sortState.col = col;
+                    _sortState.asc = col === 'name' || col === 'roadType';
+                }
+
+                tableHeader.querySelectorAll('.sort-dir').forEach(span => span.textContent = '');
+                const dirSpan = th.querySelector('.sort-dir');
+                if (dirSpan) dirSpan.textContent = _sortState.asc ? '▲' : '▼';
+
+                renderJunctionTable(_currentHour);
+            });
+        });
+    }
+
+    /**
+     * Generates and downloads a client-side CSV briefing sheet of active junction risk rankings.
+     */
+    function exportBriefingCSV() {
+        const junctions = RiskEngine.computeJunctionScores(_currentHour);
+        junctions.sort((a, b) => b.score - a.score);
+
+        const headers = [
+            'Rank',
+            'Junction Name',
+            'Risk Score (1-10)',
+            'Trend',
+            'Risk Level',
+            'Latitude',
+            'Longitude',
+            'Historical Accidents (Annual)',
+            'Daily Traffic Volume',
+            'Lighting Quality (%)',
+            'Road Type',
+            'Time Factor'
+        ];
+
+        const rows = junctions.map((j, i) => [
+            i + 1,
+            `"${j.name.replace(/"/g, '""')}"`,
+            j.score,
+            j.trend.text,
+            j.label.text,
+            j.lat,
+            j.lng,
+            j.historicalAccidents,
+            j.dailyTrafficVolume,
+            `${Math.round(j.lightingQuality * 100)}%`,
+            j.roadType,
+            j.timeFactor
+        ]);
+
+        const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+
+        const formattedHour = String(_currentHour).padStart(2, '0');
+        const filename = `Nagpur_Traffic_Risk_Briefing_${formattedHour}00.csv`;
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        window.dispatchSystemAlert('Briefing Exported', `Downloaded ${filename} (${junctions.length} junctions)`, 'info');
+    }
+
+    // Initial render of junction markers, heat layer, time slider, and sortable table
+    renderJunctionMarkers(_currentHour);
+    initHeatLayer(_currentHour);
+    renderJunctionTable(_currentHour);
+    initTableSorting();
+    initTimeSlider();
+
+    // Wire CSV Export button listener
+    const btnExportCSV = document.getElementById('btn-export-csv');
+    if (btnExportCSV) {
+        btnExportCSV.addEventListener('click', exportBriefingCSV);
+    }
 
     // Map click event: Interactive click-to-log incident creation
     map.on('click', (e) => {
@@ -447,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Controls setup
     function initControls() {
-        // Toggle Heatmap Layer (real Leaflet circle overlay per zone)
+        // Toggle Heatmap Layer (real Leaflet.heat layer per junction score)
         if (toggleHeatmap) {
             toggleHeatmap.addEventListener('click', () => {
                 state.heatmapActive = !state.heatmapActive;
@@ -456,10 +769,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (state.heatmapActive) {
                     heatmapGroup.addTo(map);
-                    window.dispatchSystemAlert('Map Layer', 'Zone risk heatmap overlay ON', 'info');
+                    window.dispatchSystemAlert('Map Layer', 'Heatmap overlay ON — showing junction risk intensities', 'info');
                 } else {
                     map.removeLayer(heatmapGroup);
-                    window.dispatchSystemAlert('Map Layer', 'Zone risk heatmap overlay OFF', 'info');
+                    window.dispatchSystemAlert('Map Layer', 'Heatmap overlay OFF', 'info');
                 }
             });
         }
