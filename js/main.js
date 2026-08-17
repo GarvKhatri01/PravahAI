@@ -46,6 +46,25 @@ function initWebSocketSync() {
                 if (['incidents_updated', 'deployment_updated', 'traffic_updated'].includes(data.event)) {
                     syncRiskEngineFromAPI();
                 }
+
+                // Auto-assignment notification — show controller alert banner
+                if (data.event === 'backup_auto_assigned') {
+                    showBackupAssignmentAlert(data);
+                    // Notify the backup log table (on incidents page)
+                    window.dispatchEvent(new CustomEvent('backup_auto_assigned_event', { detail: data }));
+                    // Also trigger incidents refresh since a new incident may have been created
+                    syncRiskEngineFromAPI();
+                }
+
+                // Backup status update (acknowledged / resolved)
+                if (data.event === 'backup_status_updated') {
+                    const req = data.data;
+                    window.dispatchSystemAlert(
+                        `Backup ${req.status}`,
+                        `Request ${req.request_id} at ${req.location} marked ${req.status}.`,
+                        req.status === 'Resolved' ? 'info' : 'elevated'
+                    );
+                }
             } catch (err) {
                 console.warn('[WebSocket] Mismatched payload:', err.message);
             }
@@ -281,3 +300,142 @@ function playBeepSound(riskLevel) {
         // Fallback silently if audio context is blocked
     }
 }
+
+/* ==========================================================================
+   Backup Auto-Assignment Alert Banner
+   Shows a persistent card in the controller UI when officers are auto-dispatched.
+   ========================================================================== */
+
+/**
+ * Renders a dismissible alert banner at the top of the page for the controller.
+ * Stacks multiple banners if several requests arrive quickly.
+ */
+function showBackupAssignmentAlert(payload) {
+    // Play critical beep
+    playBeepSound(payload.severity === 'Critical' ? 'critical' : 'elevated');
+
+    // Increment nav badge
+    window.dispatchSystemAlert(
+        `Auto-Dispatch: ${payload.location}`,
+        payload.summary,
+        payload.severity === 'Critical' ? 'critical' : 'elevated'
+    );
+
+    // Create or find the alert container
+    let container = document.getElementById('backup-alert-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'backup-alert-container';
+        container.style.cssText = [
+            'position:fixed', 'top:72px', 'right:16px', 'z-index:8000',
+            'display:flex', 'flex-direction:column', 'gap:10px',
+            'max-width:420px', 'width:calc(100% - 32px)'
+        ].join(';');
+        document.body.appendChild(container);
+    }
+
+    // Build the alert card
+    const card = document.createElement('div');
+    const isSOSOrCritical = payload.severity === 'Critical';
+    card.style.cssText = [
+        'background:' + (isSOSOrCritical ? '#7f1d1d' : '#1c3a2c'),
+        'border:1px solid ' + (isSOSOrCritical ? '#dc2626' : '#16a34a'),
+        'border-radius:12px', 'padding:14px 16px',
+        'box-shadow:0 4px 20px rgba(0,0,0,0.5)',
+        'animation:slideInRight 0.3s ease',
+        'font-family:inherit'
+    ].join(';');
+
+    const assignments = (payload.assignments || [])
+        .map(a => `<span style="display:inline-block;background:rgba(255,255,255,0.12);border-radius:6px;padding:2px 8px;font-size:11px;margin:2px;">${a.name || a.unit_id} (${a.distance_km}km · Risk ${a.zone_risk})</span>`)
+        .join('');
+
+    card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="material-symbols-outlined" style="font-size:20px;color:${isSOSOrCritical ? '#f87171' : '#4ade80'};">
+                    ${isSOSOrCritical ? 'crisis_alert' : 'local_police'}
+                </span>
+                <div>
+                    <div style="font-size:13px;font-weight:700;color:#fff;">
+                        ${isSOSOrCritical ? '🆘 SOS / Critical' : '📡 Backup Auto-Dispatched'}
+                    </div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">
+                        ${payload.requestId} · ${payload.requestingUnit} · ${new Date(payload.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </div>
+                </div>
+            </div>
+            <button onclick="this.closest('[id]').remove();" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:18px;padding:0;line-height:1;">×</button>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.85);margin:8px 0 4px;">
+            📍 <strong>${payload.location}</strong>
+            ${payload.description ? `<br><span style="opacity:0.7;">${payload.description}</span>` : ''}
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:8px;">
+            ${payload.assignedCount} officer(s) dispatched from low-risk zones:
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+            ${assignments || '<span style="font-size:11px;opacity:0.6;">No assignment details available</span>'}
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
+            <button onclick="acknowledgeBackupRequest('${payload.requestId}', this);"
+                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);
+                       background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;">
+                ✓ Acknowledge
+            </button>
+            <button onclick="this.closest('[id]').remove();"
+                style="font-size:11px;padding:4px 10px;border-radius:6px;border:none;
+                       background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);cursor:pointer;">
+                Dismiss
+            </button>
+        </div>
+    `;
+
+    card.id = 'bkp-card-' + payload.requestId;
+    container.prepend(card);
+
+    // Auto-dismiss after 30 seconds
+    setTimeout(() => { if (card.parentNode) card.remove(); }, 30000);
+}
+
+/**
+ * Marks a backup request as Acknowledged via API.
+ */
+async function acknowledgeBackupRequest(requestId, btn) {
+    try {
+        btn.disabled    = true;
+        btn.textContent = 'Acknowledging…';
+
+        const res = await fetch(`${PRAVAH_API}/api/backup/${requestId}/status`, {
+            method:  'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ status: 'Acknowledged' }),
+            signal:  AbortSignal.timeout(5000)
+        });
+
+        if (res.ok) {
+            btn.textContent       = '✓ Acknowledged';
+            btn.style.background  = '#16a34a';
+        } else {
+            btn.disabled    = false;
+            btn.textContent = '✓ Acknowledge';
+        }
+    } catch (_) {
+        btn.disabled    = false;
+        btn.textContent = '✓ Acknowledge';
+    }
+}
+
+// CSS animation for slide-in
+(function injectStyles() {
+    if (document.getElementById('backup-alert-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'backup-alert-styles';
+    style.textContent = `
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(40px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+    `;
+    document.head.appendChild(style);
+})();

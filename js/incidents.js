@@ -214,3 +214,119 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+
+/* ==========================================================================
+   Backup & Auto-Assignment Log — controller view
+   Loads from GET /api/backup and renders in the backup-requests section.
+   Listens for WebSocket backup_auto_assigned events to auto-refresh.
+   ========================================================================== */
+(function initBackupLog() {
+    const tbody      = document.getElementById('backup-requests-table-body');
+    const badge      = document.getElementById('backup-count-badge');
+    const refreshBtn = document.getElementById('btn-refresh-backup');
+    if (!tbody) return;
+
+    const API = typeof PRAVAH_API !== 'undefined' ? PRAVAH_API : 'http://localhost:3000';
+
+    async function loadBackupRequests() {
+        try {
+            const res = await fetch(API + '/api/backup?hours=24', { signal: AbortSignal.timeout(5000) });
+            if (!res.ok) throw new Error('API ' + res.status);
+            const data = await res.json();
+            renderBackupTable(data.requests || [], data.summary);
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--color-outline);padding:24px;">Unable to load backup requests — API may be offline.</td></tr>';
+            if (badge) { badge.textContent = 'Offline'; }
+        }
+    }
+
+    function renderBackupTable(requests, summary) {
+        if (badge && summary) {
+            badge.textContent = summary.dispatched + ' dispatched · ' + summary.acknowledged + ' ack · ' + summary.resolved + ' resolved';
+        }
+
+        if (!requests.length) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--color-outline);padding:24px;">No backup requests in the last 24 hours.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = requests.map(function(req) {
+            var typeIcon    = req.request_type === 'backup' ? 'support_agent' : 'emergency';
+            var typeColor   = req.request_type === 'backup' ? '#1d4ed8' : '#dc2626';
+            var sevClass    = req.severity === 'Critical' ? 'badge-critical' : req.severity === 'Warning' ? 'badge-elevated' : 'badge-success';
+            var statusClass = req.status === 'Dispatched' ? 'badge-elevated' : req.status === 'Acknowledged' ? 'badge-system' : 'badge-success';
+
+            var assignedList = (req.assigned_units || '').split(',').map(function(u) { return u.trim(); }).filter(Boolean);
+            var officerTags  = assignedList.map(function(u) {
+                var detail = (req.officer_details || []).find(function(o) { return o.unit_id === u; });
+                var label  = detail ? (detail.name + ' (' + u + ')') : u;
+                return '<span style="display:inline-block;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:5px;padding:2px 7px;font-size:11px;margin:1px;">' + label + '</span>';
+            }).join('');
+
+            var reportedTime = new Date(req.requested_at).toLocaleTimeString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+            var actionBtn = req.status === 'Dispatched'
+                ? '<button class="btn-small" onclick="ackBackupRow(\'' + req.request_id + '\', this);" style="font-size:11px;padding:3px 9px;border-radius:5px;border:1px solid var(--color-outline);background:transparent;cursor:pointer;color:inherit;">Acknowledge</button>'
+                : req.status === 'Acknowledged'
+                    ? '<button class="btn-small" onclick="resolveBackupRow(\'' + req.request_id + '\', this);" style="font-size:11px;padding:3px 9px;border-radius:5px;border:1px solid var(--color-outline);background:transparent;cursor:pointer;color:inherit;">Resolve</button>'
+                    : '<span style="font-size:11px;color:var(--color-outline);">—</span>';
+
+            return '<tr>' +
+                '<td><span class="text-mono" style="font-size:12px;">' + req.request_id + '</span></td>' +
+                '<td>' +
+                    '<span style="display:inline-flex;align-items:center;gap:4px;">' +
+                    '<span class="material-symbols-outlined" style="font-size:14px;color:' + typeColor + ';">' + typeIcon + '</span>' +
+                    '<span style="font-size:12px;text-transform:capitalize;">' + req.request_type + '</span>' +
+                    '</span>' +
+                '</td>' +
+                '<td><span class="text-mono" style="font-size:12px;">' + (req.requesting_unit || '—') + '</span></td>' +
+                '<td style="max-width:150px;font-size:12px;">' + (req.location || '—') + '</td>' +
+                '<td><span class="badge ' + sevClass + '" style="font-size:11px;">' + req.severity + '</span></td>' +
+                '<td style="max-width:220px;">' + (officerTags || '<span style="font-size:11px;color:var(--color-outline);">None</span>') + '</td>' +
+                '<td style="font-size:11px;white-space:nowrap;">' + reportedTime + '</td>' +
+                '<td><span class="badge ' + statusClass + '" style="font-size:11px;">' + req.status + '</span></td>' +
+                '<td>' + actionBtn + '</td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    // Status update helpers (called from table action buttons)
+    window.ackBackupRow = async function(requestId, btn) {
+        await updateBackupStatus(requestId, 'Acknowledged', btn);
+    };
+    window.resolveBackupRow = async function(requestId, btn) {
+        await updateBackupStatus(requestId, 'Resolved', btn);
+    };
+
+    async function updateBackupStatus(requestId, status, btn) {
+        btn.disabled    = true;
+        btn.textContent = '…';
+        try {
+            var res = await fetch(API + '/api/backup/' + requestId + '/status', {
+                method:  'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ status: status }),
+                signal:  AbortSignal.timeout(5000)
+            });
+            if (res.ok) { loadBackupRequests(); }
+            else        { btn.disabled = false; btn.textContent = status === 'Acknowledged' ? 'Acknowledge' : 'Resolve'; }
+        } catch (_) {
+            btn.disabled    = false;
+            btn.textContent = status === 'Acknowledged' ? 'Acknowledge' : 'Resolve';
+        }
+    }
+
+    // Manual refresh button
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() { loadBackupRequests(); });
+    }
+
+    // Auto-refresh on WebSocket backup events
+    window.addEventListener('backup_auto_assigned_event', loadBackupRequests);
+
+    // Initial load
+    loadBackupRequests();
+
+    // Poll every 30 seconds to catch new requests
+    setInterval(loadBackupRequests, 30000);
+})();

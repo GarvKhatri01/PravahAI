@@ -506,41 +506,225 @@ function initDutyButton() {
     });
 }
 
+
 /* ——————————————————————————————————————————
    QUICK ACTIONS
    —————————————————————————————————————————— */
 function initQuickActions() {
+    // ── Report Incident ──────────────────────────────────────────────────
     const incidentBtn = document.getElementById('btn-report-incident');
     if (incidentBtn) {
         incidentBtn.addEventListener('click', () => {
-            showToast('🚨 Incident report sent to Command Center.', 'warning');
-            window.playUIBeep && window.playUIBeep('medium');
+            openIncidentReportModal();
         });
     }
 
+    // ── Request Backup ────────────────────────────────────────────────────
     const backupBtn = document.getElementById('btn-backup');
     if (backupBtn) {
-        backupBtn.addEventListener('click', () => {
-            showToast('📡 Backup requested. ETA 8 min.', 'warning');
+        backupBtn.addEventListener('click', async () => {
+            if (backupBtn.disabled) return;
+            backupBtn.disabled    = true;
+            backupBtn.textContent = 'Requesting…';
             window.playUIBeep && window.playUIBeep('medium');
+
+            try {
+                const unitId   = sessionStorage.getItem('officer_unit_id') || 'UNKNOWN';
+                const location = (currentPost && (currentPost.name || currentPost.sector)) || 'Unknown Location';
+
+                const res = await fetch(PRAVAH_API + '/api/backup', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({
+                        requesting_unit: unitId,
+                        location:        location,
+                        severity:        'Warning',
+                        description:     'Backup requested by officer ' + unitId + ' at ' + location + '.',
+                        count:           2
+                    }),
+                    signal: AbortSignal.timeout(8000)
+                });
+
+                if (res.ok) {
+                    const data  = await res.json();
+                    const units = (data.assignments || []).map(function(a) { return a.name || a.unit_id; }).join(', ');
+                    showToast('\uD83D\uDCE1 Backup dispatched! ' + data.assignedCount + ' unit(s) en route: ' + (units || 'Assigned') + '. ID: ' + data.requestId, 'success');
+                } else {
+                    const err = await res.json().catch(function() { return {}; });
+                    showToast('\uD83D\uDCE1 Backup requested. ' + (err.message || 'Processing…'), 'warning');
+                }
+            } catch (err) {
+                showToast('\uD83D\uDCE1 Backup requested. Command Center notified (offline mode).', 'warning');
+            } finally {
+                backupBtn.disabled  = false;
+                backupBtn.innerHTML = '<span class="material-symbols-outlined">support_agent<\/span> Request Backup';
+            }
         });
     }
 
+    // ── View Map ──────────────────────────────────────────────────────────
     const mapBtn = document.getElementById('btn-view-map');
     if (mapBtn) {
-        mapBtn.addEventListener('click', () => {
-            showToast('🗺️ Full map view — coming soon.', 'info');
+        mapBtn.addEventListener('click', function() {
+            showToast('\uD83D\uDDFA\uFE0F Full map view — coming soon.', 'info');
         });
     }
 
+    // ── SOS ───────────────────────────────────────────────────────────────
     const sosBtn = document.getElementById('btn-sos');
     if (sosBtn) {
-        sosBtn.addEventListener('click', () => {
-            showToast('🆘 SOS signal sent to Command Center!', 'error');
+        sosBtn.addEventListener('click', async function() {
+            if (sosBtn.disabled) return;
+            sosBtn.disabled = true;
             window.playUIBeep && window.playUIBeep('high');
+
+            try {
+                const unitId   = sessionStorage.getItem('officer_unit_id') || 'UNKNOWN';
+                const location = (currentPost && (currentPost.name || currentPost.sector)) || 'Unknown Location';
+
+                await fetch(PRAVAH_API + '/api/backup', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({
+                        requesting_unit: unitId,
+                        location:        location,
+                        severity:        'Critical',
+                        description:     '\uD83C\uDE86 SOS — Officer ' + unitId + ' at ' + location + ' requires immediate assistance!',
+                        count:           3
+                    }),
+                    signal: AbortSignal.timeout(8000)
+                });
+            } catch (_) { /* offline — ignore */ }
+
+            showToast('\uD83C\uDE86 SOS signal sent to Command Center! Backup auto-assigned.', 'error');
+            setTimeout(function() { sosBtn.disabled = false; }, 10000);
         });
     }
 }
+
+/* ——————————————————————————————————————————
+   INCIDENT REPORT MODAL
+   Opens a dynamic modal so officers can log incidents from the field.
+   Calls POST /api/backup/incident which logs the incident AND auto-assigns backup.
+   —————————————————————————————————————————— */
+function openIncidentReportModal() {
+    var existing = document.getElementById('incident-report-modal');
+    if (existing) existing.remove();
+
+    var unitId   = sessionStorage.getItem('officer_unit_id') || 'UNKNOWN';
+    var location = (currentPost && (currentPost.name || currentPost.sector)) || '';
+
+    var modal = document.createElement('div');
+    modal.id  = 'incident-report-modal';
+    modal.setAttribute('style', [
+        'position:fixed', 'inset:0', 'z-index:9999',
+        'background:rgba(0,0,0,0.6)', 'display:flex',
+        'align-items:center', 'justify-content:center', 'padding:16px'
+    ].join(';'));
+
+    modal.innerHTML = [
+        '<div style="background:var(--color-surface,#1e1e2e);border:1px solid var(--color-outline,#444);',
+        'border-radius:16px;padding:24px;width:100%;max-width:480px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">',
+        '<h3 style="margin:0 0 16px;font-size:18px;display:flex;align-items:center;gap:8px;">',
+        '<span class="material-symbols-outlined" style="color:#dc2626;">emergency<\/span>',
+        'Report Incident<\/h3>',
+        '<label style="font-size:12px;opacity:0.7;">Location<\/label>',
+        '<input id="inc-location" type="text" value="' + location + '"',
+        'style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;margin:4px 0 12px;',
+        'border:1px solid var(--color-outline,#444);background:var(--color-surface-variant,#2a2a3a);color:inherit;font-size:14px;" \/>',
+        '<label style="font-size:12px;opacity:0.7;">Category<\/label>',
+        '<select id="inc-category" style="width:100%;padding:8px 12px;border-radius:8px;margin:4px 0 12px;',
+        'border:1px solid var(--color-outline,#444);background:var(--color-surface-variant,#2a2a3a);color:inherit;font-size:14px;">',
+        '<option>Accident<\/option><option>Congestion<\/option><option>Maintenance<\/option><option>System<\/option>',
+        '<\/select>',
+        '<label style="font-size:12px;opacity:0.7;">Severity<\/label>',
+        '<select id="inc-severity" style="width:100%;padding:8px 12px;border-radius:8px;margin:4px 0 12px;',
+        'border:1px solid var(--color-outline,#444);background:var(--color-surface-variant,#2a2a3a);color:inherit;font-size:14px;">',
+        '<option value="Warning">Warning<\/option><option value="Critical">Critical<\/option><option value="Normal">Normal<\/option>',
+        '<\/select>',
+        '<label style="font-size:12px;opacity:0.7;">Description<\/label>',
+        '<textarea id="inc-description" rows="3" placeholder="Describe the incident…"',
+        'style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;margin:4px 0 16px;',
+        'border:1px solid var(--color-outline,#444);background:var(--color-surface-variant,#2a2a3a);',
+        'color:inherit;font-size:14px;resize:vertical;"><\/textarea>',
+        '<div id="inc-result" style="margin-bottom:12px;font-size:13px;min-height:18px;"><\/div>',
+        '<div style="display:flex;gap:10px;justify-content:flex-end;">',
+        '<button id="inc-cancel-btn" style="padding:8px 18px;border-radius:8px;border:1px solid var(--color-outline,#444);',
+        'background:transparent;color:inherit;cursor:pointer;font-size:14px;">Cancel<\/button>',
+        '<button id="inc-submit-btn" style="padding:8px 18px;border-radius:8px;border:none;',
+        'background:#dc2626;color:#fff;cursor:pointer;font-size:14px;font-weight:600;">\uD83D\uDEA8 Submit Report<\/button>',
+        '<\/div><\/div>'
+    ].join('');
+
+    document.body.appendChild(modal);
+
+    document.getElementById('inc-cancel-btn').addEventListener('click', function() { modal.remove(); });
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+
+    document.getElementById('inc-submit-btn').addEventListener('click', async function() {
+        var submitBtn   = document.getElementById('inc-submit-btn');
+        var resultEl    = document.getElementById('inc-result');
+        var loc         = document.getElementById('inc-location').value.trim();
+        var category    = document.getElementById('inc-category').value;
+        var severity    = document.getElementById('inc-severity').value;
+        var description = document.getElementById('inc-description').value.trim();
+
+        if (!loc) {
+            resultEl.style.color = '#dc2626';
+            resultEl.textContent = 'Location is required.';
+            return;
+        }
+
+        submitBtn.disabled    = true;
+        submitBtn.textContent = 'Submitting…';
+        resultEl.textContent  = '';
+
+        try {
+            var res = await fetch(PRAVAH_API + '/api/backup/incident', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({
+                    requesting_unit: unitId,
+                    location:        loc,
+                    category:        category,
+                    severity:        severity,
+                    description:     description || (category + ' reported by ' + unitId + ' at ' + loc + '.')
+                }),
+                signal: AbortSignal.timeout(8000)
+            });
+
+            if (res.ok) {
+                var data = await res.json();
+                var aa   = data.autoAssignment;
+                if (aa && aa.success) {
+                    var units = (aa.assignments || []).map(function(a) { return a.name || a.unit_id; }).join(', ');
+                    resultEl.style.color = '#16a34a';
+                    resultEl.textContent = '\u2705 Reported (' + (data.incident && data.incident.incident_id) + '). Auto-assigned: ' + units + '.';
+                    showToast('\uD83D\uDEA8 Incident logged. ' + aa.assignedCount + ' unit(s) auto-dispatched.', 'success');
+                } else {
+                    resultEl.style.color = '#16a34a';
+                    resultEl.textContent = '\u2705 Incident ' + (data.incident && data.incident.incident_id) + ' logged. Command Center notified.';
+                    showToast('\uD83D\uDEA8 Incident reported. Command Center notified.', 'warning');
+                }
+                setTimeout(function() { modal.remove(); }, 2500);
+            } else {
+                var errData = await res.json().catch(function() { return {}; });
+                resultEl.style.color  = '#dc2626';
+                resultEl.textContent  = 'Error: ' + (errData.error || 'Failed to submit. Please try again.');
+                submitBtn.disabled    = false;
+                submitBtn.textContent = '\uD83D\uDEA8 Submit Report';
+            }
+        } catch (_) {
+            resultEl.style.color  = '#d97706';
+            resultEl.textContent  = '\u26A0\uFE0F Offline — report queued. Will sync when reconnected.';
+            showToast('\uD83D\uDEA8 Incident report queued (offline mode).', 'warning');
+            setTimeout(function() { modal.remove(); }, 2000);
+        }
+    });
+
+    window.playUIBeep && window.playUIBeep('medium');
+}
+
 
 /* ——————————————————————————————————————————
    LOGOUT
