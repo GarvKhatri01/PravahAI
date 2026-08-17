@@ -23,17 +23,12 @@
     <div class="app-layout">
         <!-- Sidebar Navigation Component -->
         <aside class="app-sidebar">
-            <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <img class="sidebar-logo" alt="PravahAI Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
-                    <div class="sidebar-header-titles">
-                        <h2>PravahAI</h2>
-                        <p class="text-label-sm" id="sidebar-clock"></p>
-                    </div>
+            <div class="sidebar-header">
+                <img class="sidebar-logo" alt="PravahAI Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
+                <div class="sidebar-header-titles">
+                    <h2>PravahAI</h2>
+                    <p class="text-label-sm" id="sidebar-clock"></p>
                 </div>
-                <button class="btn-icon" id="sidebar-collapse-btn" title="Collapse Sidebar" style="background: none; border: none; color: var(--color-on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: var(--rounded-md);">
-                    <span class="material-symbols-outlined" style="font-size: 20px;">menu_open</span>
-                </button>
             </div>
             
             <nav class="sidebar-nav">
@@ -61,16 +56,6 @@
                     Emergency Override
                 </button>
                 
-                <div style="display: flex; gap: 8px; justify-content: space-between; margin-bottom: 8px;">
-                    <button class="btn-icon" id="theme-toggle" style="flex: 1; height: 36px; padding: 0;">
-                        <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
-                    </button>
-                    <button class="btn-icon" id="sidebar-notifications" style="flex: 1; height: 36px; padding: 0; position: relative;">
-                        <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
-                        <span class="badge-dot" style="display: none; top: 4px; right: 4px;"></span>
-                    </button>
-                </div>
-
                 <div class="sidebar-footer-nav">
                     <a class="nav-item" href="#">
                         <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">settings</span>
@@ -86,6 +71,30 @@
 
         <!-- Main Canvas Content Area -->
         <div class="main-canvas">
+            <!-- Main Header Component -->
+            <header class="main-header" style="display: flex; align-items: center; justify-content: space-between; padding: 16px var(--spacing-container-padding); border-bottom: 1px solid var(--color-outline-variant); background-color: var(--color-surface-container-lowest); height: var(--header-height); flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button class="btn-icon" id="sidebar-toggle-btn" title="Toggle Sidebar" style="background: none; border: none; color: var(--color-on-surface); cursor: pointer; height: 36px; width: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--rounded-md); transition: background-color 0.2s ease;">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h1 class="text-headline-sm" style="margin: 0; font-weight: 700; color: var(--color-on-surface);">Risk Analytics</h1>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 11px; font-weight: 500; color: var(--color-outline); padding: 4px 10px; border-radius: var(--rounded-md); border: 1px solid var(--color-outline-variant); display: flex; align-items: center; gap: 6px; background-color: var(--color-surface-container-low);">
+                        <span class="material-symbols-outlined" style="font-size: 14px; color: var(--color-secondary);">sensors</span>
+                        <span id="api-status">Connecting...</span>
+                    </div>
+                    <button class="btn-icon" id="theme-toggle" title="Toggle Dark/Light Mode" style="height: 36px; width: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-outline-variant); background-color: var(--color-surface-container-lowest); border-radius: var(--rounded-md); color: var(--color-on-surface-variant); cursor: pointer; transition: background-color 0.2s ease;">
+                        <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
+                    </button>
+                    <button class="btn-icon" id="sidebar-notifications" title="System Notifications" style="height: 36px; width: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-outline-variant); background-color: var(--color-surface-container-lowest); border-radius: var(--rounded-md); color: var(--color-on-surface-variant); cursor: pointer; position: relative; transition: background-color 0.2s ease;">
+                        <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+                        <span class="badge-dot" style="display: none; top: 6px; right: 6px; width: 8px; height: 8px; background-color: var(--color-error); border-radius: 50%; position: absolute;"></span>
+                    </button>
+                </div>
+            </header>
+
             <!-- Main dashboard scroll area -->
             <main class="workspace-scroll">
                 <div class="workspace-container">

@@ -299,6 +299,19 @@ html, body {
     background-color: var(--color-background);
 }
 
+/* Main Header Component */
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px var(--spacing-container-padding);
+    border-bottom: 1px solid var(--color-outline-variant);
+    background-color: var(--color-surface-container-lowest);
+    height: var(--header-height);
+    flex-shrink: 0;
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
 /* Floating Menu Toggle for Mobile viewports */
 .menu-toggle-floating {
     display: none;

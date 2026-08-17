@@ -158,7 +158,7 @@ function initMobileSidebar() {
     const sidebar = document.querySelector('.app-sidebar');
     const menuToggleBtn = document.getElementById('menu-toggle');
     const appLayout = document.querySelector('.app-layout');
-    const collapseBtn = document.getElementById('sidebar-collapse-btn');
+    const toggleBtn = document.getElementById('sidebar-toggle-btn');
     if (!sidebar || !menuToggleBtn) return;
 
     // Create background overlay element dynamically
@@ -167,9 +167,8 @@ function initMobileSidebar() {
     document.body.appendChild(overlay);
 
     // Toggle menu or collapsed state
-    menuToggleBtn.addEventListener('click', () => {
+    const handleToggle = () => {
         if (window.innerWidth > 768) {
-            // Desktop: toggle collapsed layout
             if (appLayout) {
                 appLayout.classList.toggle('sidebar-collapsed');
                 const nowCollapsed = appLayout.classList.contains('sidebar-collapsed');
@@ -180,15 +179,16 @@ function initMobileSidebar() {
                 }, 310);
             }
         } else {
-            // Mobile: toggle drawer
             sidebar.classList.toggle('open');
             overlay.classList.toggle('active');
         }
-    });
+    };
 
-    // Desktop Collapse Button inside sidebar
-    if (collapseBtn && appLayout) {
-        // Restore state from localStorage
+    if (menuToggleBtn) menuToggleBtn.addEventListener('click', handleToggle);
+    if (toggleBtn) toggleBtn.addEventListener('click', handleToggle);
+
+    // Restore desktop collapsed state from localStorage
+    if (appLayout && window.innerWidth > 768) {
         const isCollapsed = localStorage.getItem('sidebar-collapsed-desktop') === 'true';
         if (isCollapsed) {
             appLayout.classList.add('sidebar-collapsed');
@@ -196,15 +196,6 @@ function initMobileSidebar() {
                 if (window.map) window.map.invalidateSize();
             }, 100);
         }
-
-        collapseBtn.addEventListener('click', () => {
-            appLayout.classList.add('sidebar-collapsed');
-            localStorage.setItem('sidebar-collapsed-desktop', 'true');
-            // Trigger map sizing update
-            setTimeout(() => {
-                if (window.map) window.map.invalidateSize({ animate: true });
-            }, 310);
-        });
     }
 
     // Close when overlay is clicked
