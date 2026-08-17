@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // DOM
     const searchInput   = document.getElementById('officer-search');
-    const sectorFilter  = document.getElementById('sector-filter');
     const statusFilter  = document.getElementById('status-filter');
     const reassignModal = document.getElementById('reassign-modal');
     const reassignForm  = document.getElementById('reassign-form');
@@ -67,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Listeners
     if (searchInput)   searchInput.addEventListener('input', renderTable);
-    if (sectorFilter)  sectorFilter.addEventListener('change', renderTable);
     if (statusFilter)  statusFilter.addEventListener('change', renderTable);
     if (closeModalBtn) closeModalBtn.addEventListener('click', hideModal);
     if (cancelModalBtn) cancelModalBtn.addEventListener('click', hideModal);
@@ -93,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const matchesStatus = statusVal === 'all' || officer.status === statusVal;
             return matchesQuery && matchesStatus;
         });
+
 
         if (filtered.length === 0) {
             deploymentTable.innerHTML = `
