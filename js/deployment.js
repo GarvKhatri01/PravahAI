@@ -238,67 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /* ——————————————————————————————————————————
-       ARRIVAL LISTENER (OFFICER PORTAL SYNC)
-       —————————————————————————————————————————— */
-    let _lastArrivedTimestamp = 0;
-
-    function initArrivalListener() {
-        function checkArrival() {
-            const raw = localStorage.getItem('pravah_arrived');
-            if (!raw) return;
-            let signal;
-            try { signal = JSON.parse(raw); } catch { return; }
-
-            if (!signal || signal.timestamp <= _lastArrivedTimestamp) return;
-            _lastArrivedTimestamp = signal.timestamp;
-
-            const officer = officers.find(o => o.id === signal.officerId);
-            if (!officer) return;
-
-            officer.postId         = signal.postId;
-            officer._pendingPostId = null;
-
-            localStorage.removeItem(`pravah_reassign_${officer.id}`);
-
-            renderTable();
-            renderDeploymentMap();
-
-            showAdminToast(`✅ ${officer.name} arrived at ${POSTS_MAP[signal.postId] || signal.postId}`);
-        }
-
-        setInterval(checkArrival, 3000);
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'pravah_arrived') checkArrival();
-        });
-    }
-
-    function showAdminToast(msg) {
-        let toast = document.getElementById('admin-arrival-toast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'admin-arrival-toast';
-            toast.style.cssText = `
-                position: fixed; bottom: 24px; right: 24px; z-index: 9999;
-                background: #002046; color: #fff;
-                padding: 12px 20px; border-radius: 10px;
-                font-size: 13px; font-weight: 600;
-                box-shadow: 0 6px 24px rgba(0,0,0,0.22);
-                display: flex; align-items: center; gap: 10px;
-                transition: opacity 0.4s ease, transform 0.4s ease;
-                opacity: 0; transform: translateY(12px);
-            `;
-            document.body.appendChild(toast);
-        }
-        toast.textContent = msg;
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateY(0)';
-        clearTimeout(toast._timer);
-        toast._timer = setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(12px)';
-        }, 4000);
-    }
 
     /* ——————————————————————————————————————————
        RENDER TABLE
@@ -448,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ——————————————————————————————————————————
-       DEPLOYMENT MAP — Plots officers, suggested destinations, & thin dotted vectors
+       ARRIVAL LISTENER (OFFICER PORTAL SYNC)
        —————————————————————————————————————————— */
     let _lastArrivedTimestamp = 0;
 
@@ -473,19 +412,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear the pending reassign signal
             localStorage.removeItem(`pravah_reassign_${officer.id}`);
 
-            // Re-render table to show new confirmed post
+            // Re-render table and map with confirmed post
             renderTable();
-
-            // Update map marker label if map is running
-            if (window._deployMap && window._deployMarkers) {
-                const marker  = window._deployMarkers[officer.id];
-                const postName = POSTS_MAP[signal.postId] || signal.postId;
-                if (marker) {
-                    marker.setPopupContent(
-                        buildPopupHTML(officer, postName)
-                    );
-                }
-            }
+            renderDeploymentMap();
 
             // Show a toast in admin portal
             showAdminToast(`✅ ${officer.name} has arrived at ${POSTS_MAP[signal.postId] || signal.postId}`);
@@ -499,8 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'pravah_arrived') checkArrival();
         });
     }
-
-    initArrivalListener();
 
     /* Simple toast for admin portal */
     function showAdminToast(msg) {
@@ -530,28 +457,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-    /* Helper: build Leaflet popup HTML for a given officer + postName */
-    function buildPopupHTML(officer, postName) {
-        const badgeColor = officer.status === 'Active' ? '#1b6d24' : '#74777f';
-        return `
-            <div style="font-family: Inter, sans-serif; padding: 6px 2px; min-width: 200px;">
-                <div style="font-weight: 800; font-size: 13px; color: #002046; margin-bottom: 6px;">${officer.name}</div>
-                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #444;">
-                    <div><strong>Unit ID:</strong> ${officer.id}</div>
-                    <div><strong>Post:</strong> ${postName}</div>
-                    <div><strong>Squad:</strong> ${officer.unit}</div>
-                    <div><strong>Contact:</strong> ${officer.contact}</div>
-                    <div><strong>Coords:</strong> ${officer.lat.toFixed(4)}, ${officer.lon.toFixed(4)}</div>
-                    <div style="margin-top: 4px;">
-                        <span style="background:${badgeColor}; color:#fff; font-weight:700; padding:2px 8px; border-radius:4px; font-size:10px;">${officer.status}</span>
-                    </div>
-                </div>
-            </div>`;
-    }
-    /* ——————————————————————————————————————————
-       DEPLOYMENT MAP — plots all officer coords
-       —————————————————————————————————————————— */
-    initDeploymentMap();
 
     function initDeploymentMap() {
         const mapEl = document.getElementById('deployment-map');
