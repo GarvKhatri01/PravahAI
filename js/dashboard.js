@@ -59,9 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let _currentHour     = new Date().getHours();
 
     /**
-     * Renders 25 Nagpur junctions as L.circleMarkers.
-     * Color & radius adapt to the 1–10 junction risk score.
-     * Green (1-3), Yellow/Orange (4-7), Red (8-10).
+     * Renders 25 Nagpur junctions as animated pulsing DivIcon heatmap markers.
+     * Critical (8-10) = rapid red blink, Elevated (4-7) = orange pulse, Clear (1-3) = slow green.
      */
     function renderJunctionMarkers(hour) {
         junctionGroup.clearLayers();
@@ -69,20 +68,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const scores = RiskEngine.computeJunctionScores(hour);
 
         scores.forEach(j => {
-            // Severity color + radius
-            let color, radius;
-            if (j.score >= 8)       { color = '#dc2626'; radius = 14; }  // Critical — Red
-            else if (j.score >= 4)  { color = '#f59e0b'; radius = 10; }  // Elevated — Yellow/Amber
-            else                    { color = '#22c55e'; radius = 7;  }  // Clear — Green
+            // Determine severity class and sizes
+            let tierClass, dotSize, ringSize, color;
+            if (j.score >= 8) {
+                tierClass = 'critical'; dotSize = 14; ringSize = 30; color = '#ef4444';
+            } else if (j.score >= 4) {
+                tierClass = 'elevated'; dotSize = 10; ringSize = 22; color = '#f97316';
+            } else {
+                tierClass = 'clear';    dotSize = 7;  ringSize = 16; color = '#22c55e';
+            }
 
-            const circle = L.circleMarker([j.lat, j.lng], {
-                radius,
-                fillColor:   color,
-                color:       '#fff',
-                weight:      1.5,
-                opacity:     1,
-                fillOpacity: 0.82
+            // Offset the icon so the dot center aligns with the coordinate
+            const halfTotal = ringSize / 2;
+            const icon = L.divIcon({
+                className: '',
+                html: `
+                    <div class="hm-marker" style="width:${ringSize}px; height:${ringSize}px;">
+                        <div class="hm-ring hm-ring-${tierClass}" style="width:${ringSize}px; height:${ringSize}px;"></div>
+                        <div class="hm-dot  hm-dot-${tierClass}"  style="width:${dotSize}px;  height:${dotSize}px;"></div>
+                    </div>`,
+                iconSize:   [ringSize, ringSize],
+                iconAnchor: [halfTotal, halfTotal]
             });
+
+            const marker = L.marker([j.lat, j.lng], { icon });
 
             // Rich popup — score breakdown
             const timeSuffix = hour !== undefined ? `${String(hour).padStart(2,'0')}:00` : 'Now';
@@ -90,11 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
                              : (hour >= 18 && hour <= 21) ? '🔺 Evening Peak'
                              : '⬤ Off-Peak';
 
-            circle.bindPopup(`
+            marker.bindPopup(`
                 <div style="width:240px; font-family: Inter, sans-serif; padding: 4px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid ${color}; padding-bottom:6px; margin-bottom:8px;">
                         <strong style="font-size:13px;">${j.name}</strong>
-                        <span style="background:${color}; color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px;">Risk ${j.score}/10</span>
+                        <span style="background:${color}; color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px;">${j.label.text} ${j.score}/10</span>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap: 5px 10px; font-size:11px; color:#4b5563; margin-bottom:8px;">
                         <div><b>Road Type:</b> ${j.roadType}</div>
@@ -110,9 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         ['Congestion Level',  j.congestionNorm,  0.3],
                         ['Lighting Penalty',  j.lightingPenalty, 0.2],
                         ['Time Factor',       j.timeNorm,        0.2]
-                    ].map(([label, val, w]) => `
+                    ].map(([lbl, val, w]) => `
                         <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
-                            <span style="font-size:10px; color:#6b7280; width:110px; flex-shrink:0;">${label} (w=${w})</span>
+                            <span style="font-size:10px; color:#6b7280; width:110px; flex-shrink:0;">${lbl} (w=${w})</span>
                             <div style="flex:1; background:#e5e7eb; border-radius:4px; height:5px; overflow:hidden;">
                                 <div style="height:100%; width:${Math.round(val*100)}%; background:${color}; border-radius:4px;"></div>
                             </div>
@@ -122,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `, { maxWidth: 270 });
 
-            circle.addTo(junctionGroup);
+            marker.addTo(junctionGroup);
         });
     }
 
@@ -219,15 +228,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return _sortState.asc ? valA - valB : valB - valA;
         });
 
-        tbody.innerHTML = junctions.map(j => `
-            <tr class="junction-row" data-lat="${j.lat}" data-lng="${j.lng}" style="border-bottom: 1px solid var(--color-outline-variant); cursor: pointer; transition: background 0.15s ease;">
+        tbody.innerHTML = junctions.map(j => {
+            const tierCls = j.label.text === 'Critical' ? 'junction-row-critical'
+                          : j.label.text === 'Elevated'  ? 'junction-row-elevated'
+                          :                                'junction-row-clear';
+            const dotColor = j.label.text === 'Critical' ? '#ef4444'
+                           : j.label.text === 'Elevated'  ? '#f97316'
+                           :                               '#22c55e';
+            return `
+            <tr class="junction-row ${tierCls}" data-lat="${j.lat}" data-lng="${j.lng}" style="border-bottom: 1px solid var(--color-outline-variant); cursor: pointer; transition: background 0.15s ease;">
                 <td style="padding: 7px 10px; font-weight: 700; color: var(--color-on-surface-variant); width: 28px;">${j.rank}</td>
                 <td style="padding: 7px 10px; font-weight: 600; color: var(--color-on-surface); max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${j.name}">
                     ${j.name}
                 </td>
                 <td style="padding: 7px 10px; font-weight: 800;">
-                    <span style="background: ${j.label.color}22; color: ${j.label.color}; padding: 2px 7px; border-radius: 10px; border: 1px solid ${j.label.color}44; font-size: 10px;">
-                        ${j.score}/10
+                    <span style="display:inline-flex; align-items:center; gap:5px; background: ${dotColor}18; color: ${dotColor}; padding: 2px 8px 2px 5px; border-radius: 10px; border: 1px solid ${dotColor}40; font-size: 10px; font-weight: 700;">
+                        <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${dotColor}; flex-shrink:0;"></span>
+                        ${j.label.text} &bull; ${j.score}/10
                     </span>
                 </td>
                 <td style="padding: 7px 10px; font-weight: 600; color: ${j.trend.color}; display: flex; align-items: center; gap: 4px;">
@@ -237,8 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="padding: 7px 10px; color: var(--color-on-surface-variant); text-transform: capitalize;">
                     ${j.roadType}
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
 
         // Row click event: Fly to junction location on map and open popup
         tbody.querySelectorAll('.junction-row').forEach(row => {
