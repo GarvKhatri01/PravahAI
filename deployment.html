@@ -150,118 +150,26 @@
                         </div>
                     </section>
 
-                    <!-- Section 6.4 Personnel-Allocation Algorithm Controls & Visualization -->
-                    <div class="alloc-command-card">
-                        <div class="alloc-command-header">
-                            <div>
-                                <h2
-                                    style="font-size: 20px; font-weight: 800; color: var(--color-on-surface); display: flex; align-items: center; gap: 10px; margin: 0;">
-                                    <span class="material-symbols-outlined"
-                                        style="color: var(--color-primary); font-size: 26px;">hub</span>
-                                    Personnel-Allocation Engine
-                                </h2>
-                                <p style="font-size: 13px; color: var(--color-outline); margin: 4px 0 0 0;">
-                                    Integrated Dynamic Risk Input → Priority Dispatch (Distance &gt; Risk)
-                                </p>
-                            </div>
+                    <!-- Deployment Live Map -->
+                    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 28px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--color-outline-variant); background: var(--color-surface-container-low);">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <span id="engine-backend-badge" class="badge badge-success"
-                                    style="font-size: 12px; padding: 6px 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
-                                    Python SciPy REST Server (Port 5000)
-                                </span>
+                                <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 22px;">map</span>
+                                <div>
+                                    <h3 style="font-size: 15px; font-weight: 700; margin: 0; color: var(--color-on-surface);">Live Officer Positions</h3>
+                                    <p style="font-size: 11px; color: var(--color-outline); margin: 2px 0 0 0;">Real-time GPS coordinates for all active units</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 8px; height: 8px; background: var(--color-success, #1b6d24); border-radius: 50%; animation: pulse-ring 2s infinite;"></span>
+                                <span style="font-size: 11px; font-weight: 700; color: var(--color-outline);">15 Units Tracked</span>
                             </div>
                         </div>
-
-                        <!-- Segmented Strategy Control Buttons -->
-                        <div style="margin-bottom: 20px;">
-                            <label
-                                style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-outline); display: block; margin-bottom: 8px;">
-                                Select Dispatch Strategy
-                            </label>
-                            <div class="strategy-segmented-control" id="strategy-btn-group">
-                                <button class="strategy-btn active" data-value="dynamic_priority_6_5">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span>
-                                    Dynamic Priority (Distance &gt; Risk)
-                                </button>
-                                <button class="strategy-btn" data-value="scipy_linear_sum_assignment">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">balance</span>
-                                    SciPy Bipartite Matching
-                                </button>
-                                <button class="strategy-btn" data-value="greedy">
-                                    <span class="material-symbols-outlined" style="font-size: 16px;">target</span>
-                                    Greedy Priority Strategy
-                                </button>
-                            </div>
-                            <select id="alloc-strategy" style="display: none;">
-                                <option value="dynamic_priority_6_5" selected>Dynamic Priority</option>
-                                <option value="scipy_linear_sum_assignment">SciPy Bipartite Matching</option>
-                                <option value="greedy">Greedy Strategy</option>
-                            </select>
-                        </div>
-
-                        <!-- Parameter Input Sliders -->
-                        <div
-                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; background: var(--color-surface-container-low); padding: 18px; border-radius: var(--rounded-lg); border: 1px solid var(--color-outline-variant); margin-bottom: 20px;">
-                            <div>
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                    <label style="font-size: 12px; font-weight: 700; color: var(--color-on-surface);">
-                                        Alpha Weight (α)
-                                    </label>
-                                    <span id="alpha-val-label"
-                                        style="font-size: 12px; font-weight: 800; color: var(--color-primary);">0.20
-                                        (Dist Priority)</span>
-                                </div>
-                                <input type="range" id="alloc-alpha" min="0" max="1" step="0.05" value="0.2"
-                                    style="width: 100%; accent-color: var(--color-primary);" />
-                                <div
-                                    style="display: flex; justify-content: space-between; font-size: 10px; color: var(--color-outline);">
-                                    <span>α=0 (Pure Dist)</span>
-                                    <span>α=1 (Pure Risk)</span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                    <label style="font-size: 12px; font-weight: 700; color: var(--color-on-surface);">
-                                        Max Radius (km)
-                                    </label>
-                                    <span id="radius-val-label"
-                                        style="font-size: 12px; font-weight: 800; color: var(--color-primary);">15
-                                        km</span>
-                                </div>
-                                <input type="range" id="alloc-radius-slider" min="1" max="50" step="1" value="15"
-                                    style="width: 100%; accent-color: var(--color-primary);" />
-                                <input type="number" id="alloc-radius" value="15" style="display: none;" />
-                            </div>
-
-                            <div>
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                    <label style="font-size: 12px; font-weight: 700; color: var(--color-on-surface);">
-                                        High-Risk Lock Threshold
-                                    </label>
-                                    <span id="lock-val-label"
-                                        style="font-size: 12px; font-weight: 800; color: var(--color-secondary);">70.0
-                                        Risk</span>
-                                </div>
-                                <input type="range" id="alloc-lock-slider" min="50" max="90" step="5" value="70"
-                                    style="width: 100%; accent-color: var(--color-secondary);" />
-                            </div>
-
-                            <div style="display: flex; align-items: flex-end;">
-                                <button class="btn btn-primary" id="btn-run-allocation"
-                                    style="width: 100%; height: 42px; gap: 8px; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 32, 70, 0.2);">
-                                    <span class="material-symbols-outlined" style="font-size: 20px;">bolt</span>
-                                    Run Allocation Optimizer
-                                </button>
-                            </div>
-                        </div>
+                        <div id="deployment-map" style="width: 100%; height: 480px; background: var(--color-surface-variant);"></div>
+                    </div>
 
 
-
-                    <!-- Deployment Specific Layout -->
+                    <!-- Deployment Table Section -->
                     <div class="deployment-layout">
                         <!-- Filtering Bar Container -->
                         <div class="filter-bar">
@@ -365,7 +273,6 @@
     <!-- Scripts defer loading -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/riskEngine.js"></script>
-    <script src="js/allocationVisualizer.js"></script>
     <script src="js/main.js"></script>
     <script src="js/deployment.js"></script>
 </body>

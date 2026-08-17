@@ -218,142 +218,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ——————————————————————————————————————————
-       SECTION 6.4 PERSONNEL ALLOCATION INTEGRATION
+       DEPLOYMENT MAP — plots all officer coords
        —————————————————————————————————————————— */
-    initSection64Allocation();
+    initDeploymentMap();
 
-    function initSection64Allocation() {
-        const mapContainer = document.getElementById('allocation-map');
-        if (!mapContainer || typeof L === 'undefined' || typeof AllocationVisualizer === 'undefined') return;
+    function initDeploymentMap() {
+        const mapEl = document.getElementById('deployment-map');
+        if (!mapEl || typeof L === 'undefined') return;
 
-        const allocMap = L.map('allocation-map', { zoomControl: true }).setView([21.1458, 79.0882], 13);
+        // Centre on Nagpur
+        const deployMap = L.map('deployment-map', { zoomControl: true })
+            .setView([21.1458, 79.0882], 13);
+
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19, attribution: '© OpenStreetMap © CARTO'
-        }).addTo(allocMap);
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+        }).addTo(deployMap);
 
-        const strategySelect = document.getElementById('alloc-strategy');
-        const strategyBtns   = document.querySelectorAll('.strategy-btn');
-        const alphaSlider    = document.getElementById('alloc-alpha');
-        const alphaLabel     = document.getElementById('alpha-val-label');
-        const radiusSlider   = document.getElementById('alloc-radius-slider');
-        const radiusLabel    = document.getElementById('radius-val-label');
-        const radiusInput    = document.getElementById('alloc-radius');
-        const lockSlider     = document.getElementById('alloc-lock-slider');
-        const lockLabel      = document.getElementById('lock-val-label');
-        const runBtn         = document.getElementById('btn-run-allocation');
-        const summaryRisk    = document.getElementById('alloc-summary-risk');
-        const summaryOff     = document.getElementById('alloc-summary-officers');
-        const summarySpots   = document.getElementById('alloc-summary-hotspots');
-        const summaryDist    = document.getElementById('alloc-summary-dist');
-        const summaryLocked  = document.getElementById('alloc-summary-locked-cnt');
-        const backendBadge   = document.getElementById('engine-backend-badge');
-        const tableBody      = document.getElementById('allocation-table-body');
-
-        if (strategyBtns.length > 0) {
-            strategyBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    strategyBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    if (strategySelect) strategySelect.value = btn.getAttribute('data-value');
-                    triggerAllocation();
-                });
+        const officerIcon = (status) => {
+            const bg = status === 'Active' ? '#002046' : '#74777f';
+            return L.divIcon({
+                className: '',
+                html: `<div style="
+                    background: ${bg};
+                    color: white;
+                    border: 2.5px solid white;
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+                    font-family: 'Material Symbols Outlined', sans-serif;
+                    font-size: 17px;
+                ">local_police</div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+                popupAnchor: [0, -18]
             });
-        }
+        };
 
-        if (alphaSlider && alphaLabel) {
-            alphaSlider.addEventListener('input', () => {
-                const val = parseFloat(alphaSlider.value);
-                let text = `${val.toFixed(2)}`;
-                if (val === 0.5) text += ' (Balanced)';
-                else if (val > 0.5) text += ' (Risk Priority)';
-                else text += ' (Dist Priority)';
-                alphaLabel.textContent = text;
+        const bounds = [];
+
+        officers.forEach(officer => {
+            const postName = POSTS_MAP[officer.postId] || officer.postId;
+            const badgeColor = officer.status === 'Active' ? '#1b6d24' : '#74777f';
+
+            const marker = L.marker([officer.lat, officer.lon], {
+                icon: officerIcon(officer.status),
+                title: officer.name
             });
+
+            marker.bindPopup(`
+                <div style="font-family: Inter, sans-serif; padding: 6px 2px; min-width: 200px;">
+                    <div style="font-weight: 800; font-size: 13px; color: #002046; margin-bottom: 6px;">
+                        ${officer.name}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #444;">
+                        <div><strong>Unit ID:</strong> ${officer.id}</div>
+                        <div><strong>Post:</strong> ${postName}</div>
+                        <div><strong>Squad:</strong> ${officer.unit}</div>
+                        <div><strong>Contact:</strong> ${officer.contact}</div>
+                        <div><strong>Coords:</strong> ${officer.lat.toFixed(4)}, ${officer.lon.toFixed(4)}</div>
+                        <div style="margin-top: 4px;">
+                            <span style="background:${badgeColor}; color:#fff; font-weight:700; padding:2px 8px; border-radius:4px; font-size:10px;">${officer.status}</span>
+                        </div>
+                    </div>
+                </div>
+            `, { maxWidth: 260 });
+
+            marker.addTo(deployMap);
+            bounds.push([officer.lat, officer.lon]);
+        });
+
+        if (bounds.length > 0) {
+            deployMap.fitBounds(L.latLngBounds(bounds), { padding: [40, 40], maxZoom: 14 });
         }
-        if (radiusSlider && radiusLabel) {
-            radiusSlider.addEventListener('input', () => {
-                radiusLabel.textContent = `${radiusSlider.value} km`;
-                if (radiusInput) radiusInput.value = radiusSlider.value;
-            });
-        }
-        if (lockSlider && lockLabel) {
-            lockSlider.addEventListener('input', () => {
-                lockLabel.textContent = `${parseFloat(lockSlider.value).toFixed(1)} Risk`;
-            });
-        }
-
-        async function triggerAllocation() {
-            if (runBtn) {
-                runBtn.disabled = true;
-                runBtn.innerHTML = `<span class="material-symbols-outlined spin" style="font-size:18px;">sync</span> Calculating...`;
-            }
-
-            const strategy   = strategySelect ? strategySelect.value : 'dynamic_priority_6_5';
-            const alpha      = alphaSlider    ? parseFloat(alphaSlider.value)  : 0.2;
-            const maxRad     = radiusSlider   ? parseFloat(radiusSlider.value) : 15.0;
-            const lockThresh = lockSlider     ? parseFloat(lockSlider.value)   : 70.0;
-
-            const payload = {
-                officers: AllocationVisualizer.DEFAULT_OFFICERS,
-                locations: AllocationVisualizer.DEFAULT_HOTSPOTS,
-                strategy, alpha,
-                default_max_radius_km: maxRad,
-                high_risk_threshold: lockThresh
-            };
-
-            const result = await AllocationVisualizer.requestAllocation(payload);
-
-            if (runBtn) {
-                runBtn.disabled = false;
-                runBtn.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px;">bolt</span> Run Allocation Optimizer`;
-            }
-
-            const lockedCount = result.assignments.filter(a => a.protection_status === 'locked_high_risk_post').length;
-
-            if (summaryRisk)   summaryRisk.textContent   = result.summary.total_risk_covered;
-            if (summaryOff)    summaryOff.textContent     = `${result.summary.assigned_officers} / ${result.summary.total_officers}`;
-            if (summarySpots)  summarySpots.textContent   = `${result.summary.covered_locations} / ${result.summary.total_locations}`;
-            if (summaryDist)   summaryDist.textContent    = `${result.summary.average_travel_distance_km} km`;
-            if (summaryLocked) summaryLocked.textContent  = `${lockedCount} High-Risk Posts Locked`;
-
-            if (backendBadge && result._backend) {
-                backendBadge.textContent = result._backend;
-                backendBadge.className   = result._backend.includes('Python') ? 'badge badge-success' : 'badge badge-warning';
-            }
-
-            const kpiCovered = document.getElementById('kpi-risk-covered');
-            if (kpiCovered) kpiCovered.textContent = result.summary.total_risk_covered;
-
-            AllocationVisualizer.renderMapVisualization(allocMap, result);
-
-            if (tableBody) {
-                tableBody.innerHTML = '';
-                if (result.assignments.length === 0) {
-                    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--color-outline);padding:20px;">No assignments satisfied distance threshold constraints.</td></tr>`;
-                    return;
-                }
-                result.assignments.forEach(asgn => {
-                    const tr = document.createElement('tr');
-                    const isLocked   = asgn.protection_status === 'locked_high_risk_post';
-                    const badgeHtml  = isLocked
-                        ? `<span class="badge-locked"><span class="material-symbols-outlined" style="font-size:12px">lock</span> Locked High Risk Post</span>`
-                        : `<span class="badge-dispatched"><span class="material-symbols-outlined" style="font-size:12px">bolt</span> Dynamic Dispatch</span>`;
-                    tr.innerHTML = `
-                        <td><strong style="color:var(--color-primary);">${asgn.officer_id}</strong><br/>
-                            <span style="font-size:11px;color:var(--color-on-surface-variant);font-weight:500;">${asgn.officer_name}</span></td>
-                        <td><code style="font-size:11px;background:var(--color-surface-container);padding:2px 4px;border-radius:4px;">${asgn.officer_start[0].toFixed(4)}, ${asgn.officer_start[1].toFixed(4)}</code></td>
-                        <td><strong style="color:var(--color-on-surface);">${asgn.location_name}</strong><br/>
-                            <span style="font-size:11px;color:var(--color-outline);">${asgn.location_id}</span></td>
-                        <td><code style="font-size:11px;background:var(--color-surface-container);padding:2px 4px;border-radius:4px;">${asgn.location_coords[0].toFixed(4)}, ${asgn.location_coords[1].toFixed(4)}</code></td>
-                        <td><span class="badge badge-success" style="font-weight:800;font-size:12px;">${asgn.risk_score}</span></td>
-                        <td><strong style="font-size:13px;">${asgn.distance_km} km</strong></td>
-                        <td>${badgeHtml}</td>`;
-                    tableBody.appendChild(tr);
-                });
-            }
-        }
-
-        if (runBtn) runBtn.addEventListener('click', triggerAllocation);
-        setTimeout(triggerAllocation, 300);
     }
 });
