@@ -18,6 +18,19 @@ document.addEventListener('DOMContentLoaded', () => {
         LOC_05: 'Dharampeth Commercial Market',
         LOC_06: 'Central Railway Station West Gate',
         LOC_07: 'Sadar Bazaar Promenade',
+        LOC_08: 'Mihan IT Park Flyover',
+        LOC_09: 'Automotive Square Kanhan Road',
+        LOC_10: 'Kalamna Grain Market Junction',
+        LOC_11: 'Medical College Hospital Square',
+        LOC_12: 'Nagpur International Airport Gate',
+        LOC_13: 'Manewada Ring Road Square',
+        LOC_14: 'Mankapur Sports Complex Crossing',
+        LOC_15: 'Amravati Road Bypass Junction',
+        LOC_16: 'Reshimbagh Ground Area',
+        LOC_17: 'Lakadganj Industrial Corridor',
+        LOC_18: 'Ramdaspeth Multi-Specialty Belt',
+        LOC_19: 'VNIT Engineering Campus Gate',
+        LOC_20: 'Koradi Temple Pilgrimage Route',
     };
 
     /* ——————————————————————————————————————————
