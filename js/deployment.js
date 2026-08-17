@@ -337,8 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>`;
     }
-
-
+    /* ——————————————————————————————————————————
        DEPLOYMENT MAP — plots all officer coords
        —————————————————————————————————————————— */
     initDeploymentMap();
