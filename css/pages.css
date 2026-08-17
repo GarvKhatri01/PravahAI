@@ -6,17 +6,48 @@
    DASHBOARD PAGE (index.html)
    -------------------------------------------------------------------------- */
 .dashboard-grid {
-    display: grid;
-    grid-template-columns: 8fr 4fr;
+    display: flex;
     gap: var(--spacing-gutter);
-    height: calc(100vh - 280px);
-    min-height: 600px;
+    width: 100%;
+    align-items: flex-start;
+}
+
+.main-display-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-gutter);
+    min-width: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.right-panel {
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-gutter);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.right-panel.collapsed {
+    width: 0;
+    margin-left: calc(-1 * var(--spacing-gutter));
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
 }
 
 @media (max-width: 1024px) {
     .dashboard-grid {
-        grid-template-columns: 1fr;
-        height: auto;
+        flex-direction: column;
+    }
+    .right-panel {
+        width: 100%;
+    }
+    .right-panel.collapsed {
+        margin-left: 0;
+        margin-top: calc(-1 * var(--spacing-gutter));
     }
 }
 
@@ -29,7 +60,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 520px;
 }
 
 .map-toolbar {

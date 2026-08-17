@@ -490,6 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleHeatmap = document.getElementById('toggle-heatmap');
     const toggleUnits = document.getElementById('toggle-units');
     const btnRecenter = document.getElementById('btn-recenter');
+    const btnToggleRight = document.getElementById('toggle-right-panel');
 
     // Load comm feed from real API on page load
     loadCommFeedFromAPI();
@@ -569,7 +570,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboardStats(result);
         renderMarkers();
         renderCorridors(apiData);
-        renderRiskFactorBar(result);
     }
 
     /**
@@ -585,59 +585,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return `${zoneInc.length} active incident(s) — ${types}. Risk score: ${zone.score}`;
         }
         return `Historical hotspot. Current risk score: ${zone.score}/100`;
-    }
-
-    /**
-     * Renders a compact risk factor breakdown bar in the Command Actions card.
-     * If the breakdown element doesn't exist, creates it.
-     */
-    function renderRiskFactorBar(result) {
-        const card = document.querySelector('.card');
-        if (!card) return;
-
-        let breakdownEl = document.getElementById('risk-factor-breakdown');
-        if (!breakdownEl) {
-            breakdownEl = document.createElement('div');
-            breakdownEl.id = 'risk-factor-breakdown';
-            breakdownEl.style.cssText = `
-                margin-top: 12px;
-                padding-top: 12px;
-                border-top: 1px solid var(--color-outline-variant);
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
-            `;
-            card.appendChild(breakdownEl);
-        }
-
-        const factorLabels = {
-            timeOfDay:       'Time of Day',
-            incidents:       'Live Incidents',
-            deployment:      'Deployment Gap',
-            trafficVelocity: 'Traffic Velocity',
-            historicalZone:  'Zone History'
-        };
-
-        breakdownEl.innerHTML = `
-            <div style="font-size: 11px; font-weight: 700; color: var(--color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
-                Risk Score Breakdown — ${result.score}/100
-            </div>
-            ${Object.entries(result.factors).map(([key, val]) => `
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 11px; color: var(--color-on-surface-variant); width: 110px; flex-shrink: 0;">${factorLabels[key]}</span>
-                    <div style="flex: 1; background: var(--color-surface-container); border-radius: var(--rounded-full); height: 6px; overflow: hidden;">
-                        <div style="
-                            height: 100%;
-                            width: ${val}%;
-                            background: ${val >= 75 ? 'var(--color-error)' : val >= 50 ? 'var(--color-on-tertiary-container)' : 'var(--color-primary)'};
-                            border-radius: var(--rounded-full);
-                            transition: width 0.6s ease;
-                        "></div>
-                    </div>
-                    <span style="font-size: 11px; font-weight: 700; color: var(--color-on-surface); width: 28px; text-align: right;">${Math.round(val)}</span>
-                </div>
-            `).join('')}
-        `;
     }
 
     // Render Markers on Map (driven by RiskEngine zone scores)
@@ -809,6 +756,38 @@ document.addEventListener('DOMContentLoaded', () => {
             btnRecenter.addEventListener('click', () => {
                 map.flyTo([21.1458, 79.0882], 13, { duration: 1.2 });
                 window.dispatchSystemAlert('Map', 'Recentered on Nagpur Zero Mile', 'info');
+            });
+        }
+
+        // Toggle Right Sidebar Panel
+        const rightPanel = document.getElementById('right-side-panel');
+        if (btnToggleRight && rightPanel) {
+            // Restore saved state from local storage
+            const isCollapsed = localStorage.getItem('right-panel-collapsed') === 'true';
+            if (isCollapsed) {
+                rightPanel.classList.add('collapsed');
+                btnToggleRight.classList.remove('active');
+                btnToggleRight.style.backgroundColor = '';
+                setTimeout(() => {
+                    if (window.map) window.map.invalidateSize();
+                }, 100);
+            } else {
+                btnToggleRight.classList.add('active');
+                btnToggleRight.style.backgroundColor = 'var(--color-surface-container-highest)';
+            }
+
+            btnToggleRight.addEventListener('click', () => {
+                const nowCollapsed = rightPanel.classList.toggle('collapsed');
+                localStorage.setItem('right-panel-collapsed', nowCollapsed);
+                btnToggleRight.classList.toggle('active', !nowCollapsed);
+                btnToggleRight.style.backgroundColor = !nowCollapsed ? 'var(--color-surface-container-highest)' : '';
+                
+                // Recalculate Leaflet tile size after sliding animation completes
+                setTimeout(() => {
+                    if (window.map) {
+                        window.map.invalidateSize({ animate: true });
+                    }
+                }, 310);
             });
         }
 
