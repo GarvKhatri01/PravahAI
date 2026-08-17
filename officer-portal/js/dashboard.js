@@ -5,32 +5,97 @@
 const PRAVAH_API = 'http://localhost:3000';
 
 /* ——————————————————————————————————————————
+   STATIC DATA — used as fallback when API is offline
+   (Vercel deployment has no backend server)
+   —————————————————————————————————————————— */
+
+const OFFICERS_DB = {
+    'B-2247': { id: 'B-2247', name: 'Constable R. Deshmukh', rank: 'Police Constable',  postId: 'P01' },
+    'B-1012': { id: 'B-1012', name: 'SI A. Kulkarni',         rank: 'Sub-Inspector',      postId: 'P02' },
+    'B-0033': { id: 'B-0033', name: 'Inspector V. Bendre',    rank: 'Inspector',           postId: 'P03' },
+};
+
+const POSTS_DB = [
+    {
+        id: 'P01', name: 'Zero Mile Stone Junction',
+        zone: 'Zone A — Central', sector: 'Sector 3',
+        riskScore: 78, riskLevel: 'high', congestionStatus: 'Heavy', activeIncidents: 3,
+        description: 'Critical 6-way intersection. High footfall & vehicle volume throughout the day. VIP convoy routes pass through. Stay vigilant.',
+        instructions: 'Maintain lane discipline at all approaches. Coordinate with Unit 42 on the western arm. Report any obstruction immediately.',
+        incidents: [
+            { id: 'I1', type: 'accident',    title: 'Multi-vehicle Accident',  desc: 'Near eastern approach — lanes blocked', time: '2 min ago',  icon: 'car_crash',      color: '#dc2626' },
+            { id: 'I2', type: 'traffic_jam', title: 'Severe Traffic Jam',      desc: 'Northbound backup > 500m',             time: '8 min ago',  icon: 'traffic',        color: '#d97706' },
+            { id: 'I3', type: 'vip',         title: 'VIP Convoy Movement',     desc: 'Route clearance required 14:30–15:00', time: '15 min ago', icon: 'directions_car', color: '#1d4ed8' },
+        ],
+    },
+    {
+        id: 'P02', name: 'Variety Square',
+        zone: 'Zone B — East', sector: 'Sector 7',
+        riskScore: 52, riskLevel: 'medium', congestionStatus: 'Moderate', activeIncidents: 1,
+        description: 'Commercial area. Moderate congestion during peak hours. Market days (Tue/Fri) see elevated pedestrian flow.',
+        instructions: 'Monitor vendor encroachments on east side. Alert HQ if rally spillover reaches the square.',
+        incidents: [
+            { id: 'I4', type: 'protest', title: 'Protest Gathering', desc: 'Approx 200 civilians — peaceful but monitored', time: '5 min ago', icon: 'group', color: '#7c3aed' },
+        ],
+    },
+    {
+        id: 'P03', name: 'Sitabuldi Interchange',
+        zone: 'Zone A — Central', sector: 'Sector 1',
+        riskScore: 31, riskLevel: 'low', congestionStatus: 'Clear', activeIncidents: 0,
+        description: 'Elevated flyover interchange. Cameras operational. Low incident history. Routine patrol sufficient.',
+        instructions: 'Standard patrol cycle. Check under-bridge area every 90 minutes.',
+        incidents: [],
+    },
+];
+
+const ALERTS_BY_POST = {
+    P01: [
+        { id: 'A1', type: 'critical', title: 'Accident — Lanes Blocked',  desc: 'Multi-vehicle collision near eastern approach. Ambulance dispatched.', time: '2 min ago',  votes: 0, totalOfficers: 4, resolved: false },
+        { id: 'A2', type: 'warning',  title: 'Signal Failure',             desc: 'Traffic light unit #3 offline. Manual control required.',              time: '11 min ago', votes: 0, totalOfficers: 4, resolved: false },
+    ],
+    P02: [
+        { id: 'A4', type: 'warning',  title: 'Protest Crowd',             desc: 'Approx 200 civilians gathering — remain vigilant.',                    time: '5 min ago',  votes: 0, totalOfficers: 3, resolved: false },
+    ],
+    P03: [],
+};
+
+/* ——————————————————————————————————————————
    STATE
    —————————————————————————————————————————— */
-let liveOfficerData     = null;  // officer row from DB
+let liveOfficerData     = null;  // officer row from DB (null if offline)
 let currentPost         = null;  // normalised post object for rendering
 let liveIncidents       = [];    // raw incidents from DB for this zone
 let onDuty              = true;
 let pendingReassignment = null;  // new post after crisis modal acknowledged
 let myVotes             = {};    // alertId → true if already voted
 
+// Derived officer info — resolved from sessionStorage unit_id
+let OFFICER_DATA        = null;
+
 /* ——————————————————————————————————————————
-   LIVE API SYNC
+   LIVE API SYNC — with static fallback
    —————————————————————————————————————————— */
 
 /**
- * Fetches the officer's live details and their zone's active incidents from the API.
- * Maps the DB structure to the shape expected by the render functions.
+ * Tries to fetch live data from the API.
+ * If the API is unreachable (Vercel, no backend), falls back to
+ * the static OFFICERS_DB and POSTS_DB for the 3 hardcoded officers.
  */
 async function syncWithCommandCenter() {
     const unitId = sessionStorage.getItem('officer_unit_id');
     if (!unitId) return;
 
+    // Resolve OFFICER_DATA from static map or create a generic entry
+    OFFICER_DATA = OFFICERS_DB[unitId] || { id: unitId, name: unitId, rank: 'Field Officer', postId: null };
+
+    // Determine which post to use: session-stored postId takes priority
+    const savedPostId = sessionStorage.getItem('officer_post') || OFFICER_DATA.postId;
+
     try {
-        // 1. Officer details + zone + incidents from deployment endpoint
+        // 1. Attempt live API call
         const [deployRes, riskRes] = await Promise.all([
-            fetch(`${PRAVAH_API}/api/deployment/officer/${unitId}`),
-            fetch(`${PRAVAH_API}/api/risk/score`)
+            fetch(`${PRAVAH_API}/api/deployment/officer/${unitId}`, { signal: AbortSignal.timeout(4000) }),
+            fetch(`${PRAVAH_API}/api/risk/score`,                   { signal: AbortSignal.timeout(4000) })
         ]);
 
         if (!deployRes.ok) throw new Error('Deployment API error');
@@ -41,60 +106,50 @@ async function syncWithCommandCenter() {
         liveIncidents   = deployData.incidents || [];
         const zone      = deployData.zone || {};
 
-        // Find this zone's score from the command-center risk data
-        let zoneScore = 0;
-        let zoneCongestion = 'Unknown';
+        let zoneScore = 0, zoneCongestion = 'Unknown';
         if (riskData && riskData.zoneScores) {
             const matchedZone = riskData.zoneScores.find(z =>
                 z.zone.toLowerCase().includes(zone.zone_name?.toLowerCase() || '')
             );
             if (matchedZone) zoneScore = matchedZone.score;
         }
-
-        // Map traffic corridors to congestion status
         if (riskData && riskData.meta) {
             const avgV = riskData.meta.avgVelocity || 0;
             zoneCongestion = avgV >= 40 ? 'Clear' : avgV >= 25 ? 'Moderate' : avgV >= 15 ? 'Heavy' : 'Gridlock';
         }
 
-        // Normalise into the post shape used by render functions
         const riskLevel = zoneScore >= 65 ? 'high' : zoneScore >= 35 ? 'medium' : 'low';
         currentPost = {
-            id:               liveOfficerData.unit_id,
-            name:             zone.zone_name || liveOfficerData.sector,
-            zone:             liveOfficerData.squad || 'Field Unit',
-            sector:           liveOfficerData.sector,
-            riskScore:        zoneScore,
-            riskLevel,
+            id: liveOfficerData.unit_id,
+            name: zone.zone_name || liveOfficerData.sector,
+            zone: liveOfficerData.squad || 'Field Unit',
+            sector: liveOfficerData.sector,
+            riskScore: zoneScore, riskLevel,
             congestionStatus: zoneCongestion,
-            activeIncidents:  liveIncidents.length,
-            description:      zone.is_high_risk
+            activeIncidents: liveIncidents.length,
+            description: zone.is_high_risk
                 ? 'High-risk designated zone. Stay vigilant and maintain frequent contact with HQ.'
                 : 'Routine monitoring zone. Report any unusual activity immediately.',
-            instructions:     `Historical risk index: ${zone.historical_risk ?? 'N/A'}. ` +
-                              `Active incidents in zone: ${liveIncidents.length}.`,
-            incidents:        liveIncidents
+            instructions: `Historical risk index: ${zone.historical_risk ?? 'N/A'}. Active incidents in zone: ${liveIncidents.length}.`,
+            incidents: liveIncidents
         };
-
-        // Update badge status indicator
         updateSyncBadge(true);
 
     } catch (err) {
-        console.warn('[Officer Portal] Live sync failed, using last known state:', err.message);
+        // ── STATIC FALLBACK ──
+        // API is offline (normal on Vercel). Use hardcoded post data.
+        console.warn('[Officer Portal] API unreachable — using static data:', err.message);
         updateSyncBadge(false);
 
-        // If no currentPost yet, create a safe fallback from sessionStorage
         if (!currentPost) {
-            const unitId = sessionStorage.getItem('officer_unit_id') || 'Unknown';
-            currentPost = {
-                id: unitId, name: unitId, zone: '—', sector: '—',
-                riskScore: 0, riskLevel: 'low', congestionStatus: '—',
-                activeIncidents: 0, description: 'Offline — unable to reach command center.',
-                instructions: 'Check network connection.', incidents: []
-            };
+            const staticPost = POSTS_DB.find(p => p.id === savedPostId) || POSTS_DB[0];
+            currentPost = { ...staticPost };
+            liveIncidents = staticPost.incidents || [];
         }
     }
 }
+
+
 
 /** Shows a small live/offline badge in the header */
 function updateSyncBadge(isLive) {
@@ -157,11 +212,17 @@ function showLoadingSkeleton() {
    OFFICER PROFILE
    —————————————————————————————————————————— */
 function renderOfficerProfile() {
-    if (!liveOfficerData) return;
-    setTextById('officer-name', liveOfficerData.name);
-    setTextById('officer-rank', liveOfficerData.squad || 'Field Officer');
-    setTextById('officer-id',   liveOfficerData.unit_id);
-    // Keep existing avatar — no avatar stored in DB
+    if (liveOfficerData) {
+        // Live API data available
+        setTextById('officer-name', liveOfficerData.name);
+        setTextById('officer-rank', liveOfficerData.squad || 'Field Officer');
+        setTextById('officer-id',   liveOfficerData.unit_id);
+    } else if (OFFICER_DATA) {
+        // Static fallback for hardcoded officers (Vercel / offline)
+        setTextById('officer-name', OFFICER_DATA.name);
+        setTextById('officer-rank', OFFICER_DATA.rank);
+        setTextById('officer-id',   OFFICER_DATA.id);
+    }
 }
 
 /* ——————————————————————————————————————————
@@ -195,7 +256,12 @@ function renderPostInfo(post) {
 /* ——————————————————————————————————————————
    ALERTS — built from live DB incidents
    —————————————————————————————————————————— */
-function getAlertsForPost() {
+function getAlertsForPost(postId) {
+    // If we have a postId (static mode), use ALERTS_BY_POST
+    const pid = postId || currentPost?.id;
+    if (!liveOfficerData && pid && ALERTS_BY_POST[pid]) {
+        return ALERTS_BY_POST[pid];
+    }
     // Convert live DB incidents to the alert format used by renderAlerts
     return liveIncidents.map((inc, i) => ({
         id:           `live-${inc.id || i}`,
