@@ -163,13 +163,11 @@
                                     <button class="btn-icon" id="btn-recenter">
                                         <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 20px;">my_location</span>
                                     </button>
+                                    <div class="map-tools-divider"></div>
+                                    <span id="data-source-badge" title="Traffic data source" style="font-size: 11px; font-weight: 700; cursor: default; padding: 2px 8px; display: flex; align-items: center; justify-content: center; height: 100%; min-width: 90px; color: var(--color-outline);">⏳ Connecting...</span>
                                 </div>
                                 
-                                <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
-                                    <span id="data-source-badge" title="Traffic data source" style="font-size: 10px; font-weight: 700; cursor: default; padding: 2px 6px; border-radius: 8px; background: var(--color-surface-container); color: var(--color-outline);">⏳ Connecting...</span>
-                                </div>
-                                
-                                <div class="map-legend">
+                                <div class="map-legend" style="pointer-events: auto;">
                                     <div class="legend-item">
                                         <div class="legend-color" style="background-color: var(--color-error);"></div>
                                         <span>Critical</span>
