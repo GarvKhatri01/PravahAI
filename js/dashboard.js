@@ -375,12 +375,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 .addTo(markersGroup);
 
             // Also add a heatmap circle for this zone (hidden by default)
-            L.circle([marker.lat, marker.lng], {
-                radius: 500,
+            L.circleMarker([marker.lat, marker.lng], {
+                radius: 40,
                 color:  color,
                 fillColor: color,
-                fillOpacity: 0.18,
-                weight: 1,
+                fillOpacity: 0.15,
+                weight: 0,
                 opacity: 0.4
             }).addTo(heatmapGroup);
         });
