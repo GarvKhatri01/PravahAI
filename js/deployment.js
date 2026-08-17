@@ -32,13 +32,21 @@ document.addEventListener('DOMContentLoaded', () => {
          U-008 / pravah008 → LOC_07 (Sadar Bazaar Promenade)
        —————————————————————————————————————————— */
     let officers = [
-        { id: 'U-001', name: 'Insp. Sanjay Patil',     contact: '+91 98700 10001', unit: 'Squad Alpha',   status: 'Active', postId: 'LOC_01' },
-        { id: 'U-002', name: 'SI Ramesh Kumar',         contact: '+91 98700 10002', unit: 'Squad Beta',    status: 'Active', postId: 'LOC_02' },
-        { id: 'U-003', name: 'Const. Priya Deshpande',  contact: '+91 98700 10003', unit: 'Squad Alpha',   status: 'Active', postId: 'LOC_03' },
-        { id: 'U-004', name: 'Insp. Amit Thakur',       contact: '+91 98700 10004', unit: 'Squad Gamma',   status: 'Active', postId: 'LOC_04' },
-        { id: 'U-005', name: 'SI Neha Joshi',           contact: '+91 98700 10005', unit: 'Squad Beta',    status: 'Active', postId: 'LOC_05' },
-        { id: 'U-006', name: 'Const. Vikram Rao',       contact: '+91 98700 10006', unit: 'Squad Gamma',   status: 'Active', postId: 'LOC_06' },
-        { id: 'U-008', name: 'Const. Sunita Borde',     contact: '+91 98700 10008', unit: 'Squad Alpha',   status: 'Active', postId: 'LOC_07' },
+        { id: 'OFF_01', name: 'Squad Alpha (Insp. Patil)',              lat: 21.1458, lon: 79.0882, unit: 'Squad Alpha',    status: 'Active', postId: 'LOC_01', contact: '+91 98700 00101' },
+        { id: 'OFF_02', name: 'Squad Beta (SI Kulkarni)',                lat: 21.1430, lon: 79.0820, unit: 'Squad Beta',     status: 'Active', postId: 'LOC_02', contact: '+91 98700 00102' },
+        { id: 'OFF_03', name: 'Squad Gamma (Const. Deshmukh)',           lat: 21.1550, lon: 79.0750, unit: 'Squad Gamma',    status: 'Active', postId: 'LOC_03', contact: '+91 98700 00103' },
+        { id: 'OFF_04', name: 'Patrol Delta (SI Bendre)',                lat: 21.1350, lon: 79.0980, unit: 'Patrol Delta',   status: 'Active', postId: 'LOC_04', contact: '+91 98700 00104' },
+        { id: 'OFF_05', name: 'Tactical Echo (Insp. Joshi)',             lat: 21.1620, lon: 79.0920, unit: 'Tactical Echo',  status: 'Active', postId: 'LOC_05', contact: '+91 98700 00105' },
+        { id: 'OFF_06', name: 'Reserve Foxtrot (Const. Rao)',            lat: 21.1280, lon: 79.0700, unit: 'Reserve',        status: 'Active', postId: 'LOC_06', contact: '+91 98700 00106' },
+        { id: 'OFF_07', name: 'Highway Mobile 1 (SI Shinde)',            lat: 21.1020, lon: 79.0480, unit: 'Highway Unit',   status: 'Active', postId: 'LOC_07', contact: '+91 98700 00107' },
+        { id: 'OFF_08', name: 'North Sector QRT (Insp. Wagh)',           lat: 21.1820, lon: 79.0850, unit: 'QRT North',      status: 'Active', postId: 'LOC_08', contact: '+91 98700 00108' },
+        { id: 'OFF_09', name: 'East Precinct Squad (SI Jadhav)',         lat: 21.1480, lon: 79.1250, unit: 'East Precinct',  status: 'Active', postId: 'LOC_09', contact: '+91 98700 00109' },
+        { id: 'OFF_10', name: 'South Patrol Unit (Const. Chavan)',       lat: 21.0950, lon: 79.0620, unit: 'South Patrol',   status: 'Active', postId: 'LOC_10', contact: '+91 98700 00110' },
+        { id: 'OFF_11', name: 'Traffic Control Alpha (Insp. More)',      lat: 21.1390, lon: 79.0550, unit: 'Traffic Alpha',  status: 'Active', postId: 'LOC_11', contact: '+91 98700 00111' },
+        { id: 'OFF_12', name: 'Metro Security Unit (SI Pawar)',          lat: 21.1500, lon: 79.0880, unit: 'Metro Sec',      status: 'Active', postId: 'LOC_12', contact: '+91 98700 00112' },
+        { id: 'OFF_13', name: 'Airport Rapid Response (Insp. Sawant)',   lat: 21.0920, lon: 79.0500, unit: 'Airport RR',     status: 'Active', postId: 'LOC_13', contact: '+91 98700 00113' },
+        { id: 'OFF_14', name: 'West Suburb Patrol (SI Kadam)',           lat: 21.1680, lon: 79.0400, unit: 'West Suburb',    status: 'Active', postId: 'LOC_14', contact: '+91 98700 00114' },
+        { id: 'OFF_15', name: 'Central Reserve Squad (Const. Gaikwad)',  lat: 21.1410, lon: 79.0800, unit: 'Central Res',    status: 'Active', postId: 'LOC_15', contact: '+91 98700 00115' },
     ];
 
     // DOM elements
