@@ -52,15 +52,18 @@ function initLoginForm() {
         e.preventDefault();
         hideError();
 
-        const badgeId  = document.getElementById('badge-id').value.trim().toUpperCase();
-        const password = document.getElementById('password').value;
+        const badgeId  = document.getElementById('badge-id').value.trim();
+        const password = document.getElementById('password').value.trim();
 
         if (!badgeId || !password) { showError('Please fill in all fields.'); return; }
 
         setLoading(true, submitBtn, spinner);
         await delay(900);
 
-        const user = USERS.find(u => u.badgeId === badgeId && u.password === password);
+        const user = USERS.find(u =>
+            u.badgeId.toUpperCase() === badgeId.toUpperCase() &&
+            u.password === password
+        );
 
         if (user) {
             sessionStorage.setItem('officer_logged_in', 'true');
