@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Nagpur Traffic Ops - Officers Deployment</title>
+    <!-- Google Fonts: Inter & Material Symbols -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <!-- Modular CSS -->
+    <link href="css/style.css" rel="stylesheet"/>
+    <link href="css/components.css" rel="stylesheet"/>
+    <link href="css/pages.css" rel="stylesheet"/>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation Component -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <img class="sidebar-logo" alt="Nagpur City Police Emblem" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
+                <div class="sidebar-header-titles">
+                    <h2>Nagpur Traffic Ops</h2>
+                    <p class="text-label-sm">Command Center Alpha</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a class="nav-item" href="index.html">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item active" href="deployment.html">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_add</span>
+                    <span>Deployment</span>
+                </a>
+                <a class="nav-item" href="risk-analysis.html">
+                    <span class="material-symbols-outlined">analytics</span>
+                    <span>Risk Analysis</span>
+                </a>
+                <a class="nav-item" href="risk-analysis.html">
+                    <span class="material-symbols-outlined">compare_arrows</span>
+                    <span>Analytics</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-danger" style="width: 100%;">
+                    <span class="material-symbols-outlined">warning</span>
+                    Emergency Override
+                </button>
+                <div class="sidebar-footer-nav">
+                    <a class="nav-item" href="#">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                        <span>Settings</span>
+                    </a>
+                    <a class="nav-item" href="#">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">help</span>
+                        <span>Support</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Canvas Content Area -->
+        <div class="main-canvas">
+            <!-- Header bar / TopAppBar -->
+            <header class="top-appbar">
+                <div class="top-brand">
+                    <button class="menu-toggle" id="menu-toggle">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h1>Nagpur City Risk Management</h1>
+                </div>
+                
+                <nav class="top-nav">
+                    <a class="top-nav-link" href="index.html">Live Map</a>
+                    <a class="top-nav-link" href="incidents.html">Incidents</a>
+                    <a class="top-nav-link active" href="deployment.html">Resources</a>
+                </nav>
+
+                <div class="top-actions">
+                    <div class="search-container">
+                        <span class="material-symbols-outlined search-icon" style="font-size: 18px;">search</span>
+                        <input class="search-input" id="officer-search-global" placeholder="Search operational grid..." type="text"/>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="theme-toggle" data-tooltip="Switch Theme" style="padding: 6px; border-radius: var(--rounded-full); background: transparent; border: 1px solid var(--color-outline-variant); color: var(--color-on-surface-variant);">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">dark_mode</span>
+                    </button>
+                    
+                    <div class="action-divider"></div>
+                    
+                    <button class="icon-btn" data-tooltip="System Notifications">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="badge-dot" style="display: none;"></span>
+                    </button>
+                    <button class="icon-btn" data-tooltip="Account Officer">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <img class="profile-avatar" alt="Officer Profile Headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzh2rsFvAFzyIXKC7FW5Uxn0_xUrHi-1DgnHn58dcq706gjNyfaLRcMWzQoEM2bvFusepFCo9neQBRTFy6BL_WI7yJWb7hgxklR06ZSxuUFDeiSA5tv2qX0DQSnwToz_TmS9LgdgG15rbku0uSA8hEPdR8i8pWeU_SKSKSJVLVoRfBssan351AjedBQI-cuIxJdflxPtQBmdZMLozaGkYNXRgwu292RLnw9Fe09BLVzU2H6BQFasv_bg"/>
+                </div>
+            </header>
+
+            <!-- Main dashboard scroll area -->
+            <main class="workspace-scroll">
+                <div class="workspace-container">
+                    
+                    <!-- KPI Metric Summary Row -->
+                    <section class="kpi-row">
+                        <!-- Card 1 -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <h3 class="kpi-title">Active Resources</h3>
+                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-secondary);">engineering</span>
+                            </div>
+                            <div class="kpi-value-container">
+                                <span class="text-display-lg kpi-value" id="active-officers-count">4</span>
+                                <span class="badge badge-success" id="active-deployment-pct">80% Deployment</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <h3 class="kpi-title">Average Battery</h3>
+                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-on-tertiary-container);">battery_charging_full</span>
+                            </div>
+                            <div class="kpi-value-container">
+                                <span class="text-display-lg kpi-value">78%</span>
+                                <span class="text-body-md" style="color: var(--color-on-surface-variant); font-weight: 500;">All units online</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <h3 class="kpi-title">Total Fleet</h3>
+                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-primary);">directions_car</span>
+                            </div>
+                            <div class="kpi-value-container">
+                                <span class="text-display-lg kpi-value">22</span>
+                                <span class="text-body-md" style="color: var(--color-on-surface-variant); font-weight: 500;">4 Squads Allocated</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Deployment Specific Layout -->
+                    <div class="deployment-layout">
+                        <!-- Filtering Bar Container -->
+                        <div class="filter-bar">
+                            <!-- Search -->
+                            <div class="filter-group" style="flex: 1; min-width: 240px;">
+                                <label for="officer-search">Search Unit / Officer</label>
+                                <input class="form-control" id="officer-search" placeholder="Type officer name or ID..." style="width: 100%;" type="text"/>
+                            </div>
+                            
+                            <!-- Sector Select -->
+                            <div class="filter-group">
+                                <label for="sector-filter">Sector Zone</label>
+                                <select class="form-control select-control" id="sector-filter">
+                                    <option value="all">All Sectors</option>
+                                    <option value="Sitabuldi">Sitabuldi</option>
+                                    <option value="Zero Mile">Zero Mile</option>
+                                    <option value="Wardha Road">Wardha Road</option>
+                                    <option value="Sadar Junction">Sadar Junction</option>
+                                </select>
+                            </div>
+
+                            <!-- Status Select -->
+                            <div class="filter-group">
+                                <label for="status-filter">Status</label>
+                                <select class="form-control select-control" id="status-filter">
+                                    <option value="all">All Statuses</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Standby">Standby</option>
+                                    <option value="Off-Duty">Off-Duty</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Officers High Density Grid Table -->
+                        <div class="card" style="padding: 0; overflow: hidden;">
+                            <div class="table-responsive">
+                                <table class="table-high-density">
+                                    <thead>
+                                        <tr>
+                                            <th>Unit ID</th>
+                                            <th>Officer / Contact</th>
+                                            <th>Sector Area</th>
+                                            <th>Squad Code</th>
+                                            <th>Duty Status</th>
+                                            <th>Battery Status</th>
+                                            <th>Command Options</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="deployment-table-body">
+                                        <!-- Populated dynamically via deployment.js -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Reassignment Overlay Modal component -->
+    <div class="modal-backdrop" id="reassign-modal">
+        <div class="modal-container">
+            <form id="reassign-form">
+                <div class="modal-header">
+                    <h3>Reassign Duty Parameters</h3>
+                    <button class="btn-icon" id="close-modal-btn" type="button">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 16px; font-weight: 600; font-size: 14px; color: var(--color-on-surface);">
+                        Modifying parameters for: <span id="reassign-officer-name" style="color: var(--color-primary); font-weight: 800;">Inspector Sanjay Patil</span>
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="reassign-sector">Sector Allocation</label>
+                        <select class="form-control select-control" id="reassign-sector" required>
+                            <option value="Sitabuldi">Sitabuldi</option>
+                            <option value="Zero Mile">Zero Mile</option>
+                            <option value="Wardha Road">Wardha Road</option>
+                            <option value="Sadar Junction">Sadar Junction</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reassign-unit">Squad Group</label>
+                        <select class="form-control select-control" id="reassign-unit" required>
+                            <option value="Squad Alpha">Squad Alpha</option>
+                            <option value="Squad Beta">Squad Beta</option>
+                            <option value="Squad Gamma">Squad Gamma</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reassign-status">Duty Status</label>
+                        <select class="form-control select-control" id="reassign-status" required>
+                            <option value="Active">Active</option>
+                            <option value="Standby">Standby</option>
+                            <option value="Off-Duty">Off-Duty</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" id="cancel-modal-btn" type="button">Cancel</button>
+                    <button class="btn btn-primary" type="submit">Confirm Reassignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts defer loading -->
+    <script src="js/main.js"></script>
+    <script src="js/deployment.js"></script>
+</body>
+</html>

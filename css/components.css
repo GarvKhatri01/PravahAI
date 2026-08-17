@@ -1,0 +1,443 @@
+/* ==========================================================================
+   Civic Sentinel - Component Library (components.css)
+   ========================================================================== */
+
+/* Cards & Containers */
+.card {
+    background-color: var(--color-surface-container-lowest);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--rounded-lg);
+    padding: var(--spacing-gutter);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.card-title {
+    color: var(--color-on-surface);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+/* KPI Scorecards */
+.kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--spacing-gutter);
+}
+
+.kpi-card {
+    background-color: var(--color-surface-container-lowest);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--rounded-lg);
+    padding: var(--spacing-gutter);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 110px;
+    transition: all 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.02);
+}
+
+.kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.kpi-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-on-surface-variant);
+}
+
+.kpi-value-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.kpi-value {
+    color: var(--color-on-surface);
+}
+
+/* Buttons */
+.btn {
+    font-family: var(--font-family);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: var(--rounded-default);
+    padding: 8px 16px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:active {
+    transform: scale(0.95);
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+}
+
+.btn-secondary {
+    background-color: var(--color-secondary);
+    color: var(--color-on-secondary);
+}
+
+.btn-danger {
+    background-color: var(--color-error);
+    color: var(--color-on-error);
+    box-shadow: 0 4px 6px rgba(186, 26, 26, 0.2);
+}
+
+.btn-danger:hover {
+    background-color: var(--color-on-error-container);
+}
+
+.btn-ghost {
+    background-color: transparent;
+    border: 1px solid var(--color-outline-variant);
+    color: var(--color-on-surface);
+}
+
+.btn-ghost:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface-container-highest);
+}
+
+.btn-icon {
+    padding: 6px;
+    border-radius: var(--rounded-default);
+    background: transparent;
+    border: 1px solid var(--color-outline-variant);
+    color: var(--color-on-surface-variant);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+    background-color: var(--color-surface-container);
+    color: var(--color-on-surface);
+    border-color: var(--color-outline);
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--rounded-full);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.badge-critical {
+    background-color: var(--color-error-container);
+    color: var(--color-on-error-container);
+}
+
+.badge-elevated {
+    background-color: var(--color-tertiary-fixed);
+    color: var(--color-on-tertiary-fixed-variant);
+}
+
+.badge-watch {
+    background-color: #fef08a;
+    color: #854d0e;
+}
+
+.badge-success {
+    background-color: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
+}
+
+.badge-system {
+    background-color: var(--color-surface-container-highest);
+    color: var(--color-on-surface);
+    border: 1px solid var(--color-outline-variant);
+}
+
+/* Data Forms & Inputs */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.form-control {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--rounded-default);
+    padding: 8px 12px;
+    font-size: 14px;
+    height: var(--spacing-input-height);
+    color: var(--color-on-surface);
+    outline: none;
+    font-family: var(--font-family);
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-container);
+}
+
+textarea.form-control {
+    height: auto;
+    min-height: 80px;
+    resize: vertical;
+}
+
+.select-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg fill='%2374777f' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 32px;
+}
+
+/* Tables Styling */
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.table-high-density {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table-high-density th {
+    background-color: var(--color-surface-container-low);
+    color: var(--color-on-surface-variant);
+    padding: 10px 16px;
+    border-bottom: 2px solid var(--color-primary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.table-high-density td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--color-outline-variant);
+    font-size: 13px;
+    white-space: nowrap;
+    color: var(--color-on-surface);
+}
+
+.table-high-density tr {
+    height: var(--spacing-table-row-height);
+    transition: background-color 0.15s ease;
+}
+
+.table-high-density tbody tr:nth-child(even) {
+    background-color: var(--color-surface-container-lowest);
+}
+
+.table-high-density tbody tr:nth-child(odd) {
+    background-color: var(--color-surface-container-low);
+}
+
+.table-high-density tbody tr:hover {
+    background-color: var(--color-surface-container-highest);
+}
+
+/* Modals System */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(11, 28, 48, 0.5);
+    backdrop-filter: blur(2px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.active {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-container {
+    background-color: var(--color-surface-container-lowest);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--rounded-lg);
+    width: 480px;
+    max-width: 95vw;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-backdrop.active .modal-container {
+    transform: scale(1);
+}
+
+.modal-header {
+    padding: 16px var(--spacing-gutter);
+    border-bottom: 1px solid var(--color-outline-variant);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-header h3 {
+    color: var(--color-on-surface);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.modal-body {
+    padding: var(--spacing-gutter);
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 16px var(--spacing-gutter);
+    border-top: 1px solid var(--color-outline-variant);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Tooltips */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    background-color: var(--color-inverse-surface);
+    color: var(--color-inverse-on-surface);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: var(--rounded-sm);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 500;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-8px);
+}
+
+/* Map Markers */
+.map-marker {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--rounded-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    border: 2px solid white;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 20;
+}
+
+.map-marker:hover {
+    transform: scale(1.25);
+    z-index: 30;
+}
+
+/* Pulse animation utility */
+@keyframes marker-pulse {
+    0% { transform: scale(0.8); opacity: 0.6; }
+    100% { transform: scale(2.2); opacity: 0; }
+}
+
+.marker-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background-color: inherit;
+    animation: marker-pulse 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    z-index: -1;
+}
+
+/* Map Legend */
+.map-legend {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--rounded-default);
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    gap: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+[data-theme="dark"] .map-legend {
+    background-color: rgba(18, 24, 36, 0.9);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-on-surface);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--rounded-sm);
+}

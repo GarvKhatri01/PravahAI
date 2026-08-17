@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Nagpur Traffic Ops - Incidents Logging Logs</title>
+    <!-- Google Fonts: Inter & Material Symbols -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <!-- Modular CSS -->
+    <link href="css/style.css" rel="stylesheet"/>
+    <link href="css/components.css" rel="stylesheet"/>
+    <link href="css/pages.css" rel="stylesheet"/>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation Component -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <img class="sidebar-logo" alt="Nagpur City Police Emblem" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
+                <div class="sidebar-header-titles">
+                    <h2>Nagpur Traffic Ops</h2>
+                    <p class="text-label-sm">Command Center Alpha</p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a class="nav-item" href="index.html">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-item" href="deployment.html">
+                    <span class="material-symbols-outlined">person_add</span>
+                    <span>Deployment</span>
+                </a>
+                <a class="nav-item" href="risk-analysis.html">
+                    <span class="material-symbols-outlined">analytics</span>
+                    <span>Risk Analysis</span>
+                </a>
+                <a class="nav-item" href="risk-analysis.html">
+                    <span class="material-symbols-outlined">compare_arrows</span>
+                    <span>Analytics</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-danger" style="width: 100%;">
+                    <span class="material-symbols-outlined">warning</span>
+                    Emergency Override
+                </button>
+                <div class="sidebar-footer-nav">
+                    <a class="nav-item" href="#">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                        <span>Settings</span>
+                    </a>
+                    <a class="nav-item" href="#">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">help</span>
+                        <span>Support</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Canvas Content Area -->
+        <div class="main-canvas">
+            <!-- Header bar / TopAppBar -->
+            <header class="top-appbar">
+                <div class="top-brand">
+                    <button class="menu-toggle" id="menu-toggle">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h1>Nagpur City Risk Management</h1>
+                </div>
+                
+                <nav class="top-nav">
+                    <a class="top-nav-link" href="index.html">Live Map</a>
+                    <a class="top-nav-link active" href="incidents.html">Incidents</a>
+                    <a class="top-nav-link" href="deployment.html">Resources</a>
+                </nav>
+
+                <div class="top-actions">
+                    <div class="search-container">
+                        <span class="material-symbols-outlined search-icon" style="font-size: 18px;">search</span>
+                        <input class="search-input" placeholder="Search operational grid..." type="text"/>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="theme-toggle" data-tooltip="Switch Theme" style="padding: 6px; border-radius: var(--rounded-full); background: transparent; border: 1px solid var(--color-outline-variant); color: var(--color-on-surface-variant);">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">dark_mode</span>
+                    </button>
+                    
+                    <div class="action-divider"></div>
+                    
+                    <button class="icon-btn" data-tooltip="System Notifications">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="badge-dot" style="display: none;"></span>
+                    </button>
+                    <button class="icon-btn" data-tooltip="Account Officer">
+                        <span class="material-symbols-outlined">account_circle</span>
+                    </button>
+                    <img class="profile-avatar" alt="Officer Profile Headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzh2rsFvAFzyIXKC7FW5Uxn0_xUrHi-1DgnHn58dcq706gjNyfaLRcMWzQoEM2bvFusepFCo9neQBRTFy6BL_WI7yJWb7hgxklR06ZSxuUFDeiSA5tv2qX0DQSnwToz_TmS9LgdgG15rbku0uSA8hEPdR8i8pWeU_SKSKSJVLVoRfBssan351AjedBQI-cuIxJdflxPtQBmdZMLozaGkYNXRgwu292RLnw9Fe09BLVzU2H6BQFasv_bg"/>
+                </div>
+            </header>
+
+            <!-- Main dashboard scroll area -->
+            <main class="workspace-scroll">
+                <div class="workspace-container">
+                    
+                    <!-- Top Actions Bar -->
+                    <div class="incidents-header-actions">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <h2 class="text-headline-sm" style="margin-bottom: 0;">Live Incidents Log</h2>
+                            <p class="text-body-md" style="color: var(--color-on-surface-variant);">Active logs currently logged and dispatched in command sectors.</p>
+                        </div>
+                        
+                        <button class="btn btn-primary" id="btn-open-log-modal">
+                            <span class="material-symbols-outlined">add</span>
+                            Log New Incident
+                        </button>
+                    </div>
+
+                    <!-- KPI Metric Summary Row -->
+                    <section class="kpi-row">
+                        <!-- Card 1 -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <h3 class="kpi-title">Active Incidents</h3>
+                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-error);">warning</span>
+                            </div>
+                            <div class="kpi-value-container">
+                                <span class="text-display-lg kpi-value" id="total-incidents-count">0</span>
+                                <span class="badge badge-critical" id="critical-incidents-count">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <h3 class="kpi-title">Resolved (Today)</h3>
+                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-secondary);">check_circle</span>
+                            </div>
+                            <div class="kpi-value-container">
+                                <span class="text-display-lg kpi-value">2</span>
+                                <span class="badge badge-success">SLA Met (100%)</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <h3 class="kpi-title">Avg Response Time</h3>
+                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-primary);">schedule</span>
+                            </div>
+                            <div class="kpi-value-container">
+                                <span class="text-display-lg kpi-value">4.2m</span>
+                                <span class="text-body-md" style="color: var(--color-on-surface-variant); font-weight: 500;">Target &lt; 5 mins</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Logs Table List Layout -->
+                    <div class="incidents-layout-grid">
+                        <!-- Filtering Bar Container -->
+                        <div class="filter-bar">
+                            <!-- Search -->
+                            <div class="filter-group" style="flex: 1; min-width: 240px;">
+                                <label for="incident-search">Search Logs</label>
+                                <input class="form-control" id="incident-search" placeholder="Type incident ID, location or description..." style="width: 100%;" type="text"/>
+                            </div>
+                            
+                            <!-- Category Select -->
+                            <div class="filter-group">
+                                <label for="category-filter">Category</label>
+                                <select class="form-control select-control" id="category-filter">
+                                    <option value="all">All Categories</option>
+                                    <option value="Congestion">Congestion</option>
+                                    <option value="Accident">Accident</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="System">System</option>
+                                </select>
+                            </div>
+
+                            <!-- Severity Select -->
+                            <div class="filter-group">
+                                <label for="severity-filter">Severity</label>
+                                <select class="form-control select-control" id="severity-filter">
+                                    <option value="all">All Severities</option>
+                                    <option value="Critical">Critical</option>
+                                    <option value="Warning">Warning</option>
+                                    <option value="Normal">Normal</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Logs Data Grid -->
+                        <div class="card" style="padding: 0; overflow: hidden;">
+                            <div class="table-responsive">
+                                <table class="table-high-density">
+                                    <thead>
+                                        <tr>
+                                            <th>Incident ID</th>
+                                            <th>Location Sector</th>
+                                            <th>Category</th>
+                                            <th>Severity</th>
+                                            <th>Report Time</th>
+                                            <th>Log Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="incident-table-body">
+                                        <!-- Populated dynamically via incidents.js -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Log Incident Overlay Modal component -->
+    <div class="modal-backdrop" id="log-incident-modal">
+        <div class="modal-container">
+            <form id="log-incident-form">
+                <div class="modal-header">
+                    <h3>Log Command Incident</h3>
+                    <button class="btn-icon" id="close-log-modal-btn" type="button">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="incident-location">Sector Location</label>
+                        <input class="form-control" id="incident-location" placeholder="e.g. Zero Mile Stone, Sadar Junction..." required type="text"/>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="incident-category">Category</label>
+                        <select class="form-control select-control" id="incident-category" required>
+                            <option value="Congestion">Congestion</option>
+                            <option value="Accident">Accident</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="System">System</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="incident-severity">Severity Level</label>
+                        <select class="form-control select-control" id="incident-severity" required>
+                            <option value="Normal">Normal</option>
+                            <option value="Warning">Warning</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="incident-desc">Incident Details / Description</label>
+                        <textarea class="form-control" id="incident-desc" placeholder="Provide specific diagnostic metrics or lane blocks details..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-ghost" id="cancel-log-modal-btn" type="button">Cancel</button>
+                    <button class="btn btn-primary" type="submit">Log Incident</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts defer loading -->
+    <script src="js/main.js"></script>
+    <script src="js/incidents.js"></script>
+</body>
+</html>
