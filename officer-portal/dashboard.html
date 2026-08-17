@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>PravahAI — Officer Dashboard</title>
+    <meta name="description" content="Field officer dashboard — live post information, alerts, and crisis reassignment notifications for Nagpur City Police."/>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="css/style.css"/>
+    <link rel="stylesheet" href="css/components.css"/>
+    <link rel="stylesheet" href="css/pages.css"/>
+</head>
+<body>
+
+<div class="officer-layout">
+
+    <!-- ══════════════════════════════════
+         TOP HEADER
+         ══════════════════════════════════ -->
+    <header class="officer-header">
+        <!-- Left: Brand -->
+        <div class="officer-header-brand">
+            <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"
+                alt="Nagpur City Police Emblem"
+            />
+            <div>
+                <div class="brand-name">PravahAI</div>
+                <div class="brand-sub" id="header-clock">--:--:--</div>
+            </div>
+        </div>
+
+        <!-- Right: Actions — notifications, dark mode, logout only -->
+        <div class="officer-header-actions">
+            <!-- Notifications (with dropdown) -->
+            <div class="notif-wrapper" id="notif-wrapper">
+                <button class="header-icon-btn" id="btn-header-notif" title="Notifications">
+                    <span class="material-symbols-outlined" style="font-size:20px;">notifications</span>
+                    <span class="header-notif-badge" id="header-notif-badge"></span>
+                </button>
+                <!-- Notification dropdown panel -->
+                <div class="notif-dropdown" id="notif-dropdown">
+                    <div class="notif-dropdown-header">
+                        <span>Incidents at Your Post</span>
+                        <span class="notif-count" id="notif-count">0</span>
+                    </div>
+                    <div class="notif-dropdown-list" id="notif-dropdown-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theme toggle -->
+            <button class="header-icon-btn" id="theme-toggle" title="Toggle theme">
+                <span class="material-symbols-outlined" style="font-size:20px;">dark_mode</span>
+            </button>
+
+            <!-- Logout -->
+            <button class="header-icon-btn" id="btn-logout" title="Log Out" style="background:rgba(186,26,26,0.18); border-color:rgba(186,26,26,0.3);">
+                <span class="material-symbols-outlined" style="font-size:20px; color:#ffb4ab;">logout</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ══════════════════════════════════
+         MAIN SCROLL AREA
+         ══════════════════════════════════ -->
+    <main class="officer-main">
+        <div class="officer-container">
+
+            <!-- ─────────────────────────────────
+                 SECTION 1: Officer Profile
+                 ───────────────────────────────── -->
+            <div class="officer-profile-strip">
+                <img class="officer-profile-avatar" id="officer-avatar" src="" alt="Officer Photo"/>
+                <div class="officer-profile-info">
+                    <div class="officer-profile-name" id="officer-name">Loading…</div>
+                    <div class="officer-profile-rank" id="officer-rank">—</div>
+                    <!-- Only ID, no badge prefix -->
+                    <div class="officer-profile-id" id="officer-id">—</div>
+                </div>
+                <div class="officer-profile-status">
+                    <span class="pulse-dot green" id="duty-dot"></span>
+                    <span id="duty-label" style="font-size:12px; font-weight:600; color:var(--color-on-surface);">On Duty</span>
+                </div>
+            </div>
+
+            <!-- ─────────────────────────────────
+                 PENDING REASSIGNMENT BANNER
+                 Shown after crisis modal acknowledged.
+                 Officer must click "Mark Arrived" here
+                 to officially update their post.
+                 ───────────────────────────────── -->
+            <div class="reassign-pending-banner" id="reassign-pending-banner" style="display:none;">
+                <div class="reassign-pending-inner">
+                    <div class="reassign-pending-left">
+                        <div class="reassign-pending-label">
+                            <span class="material-symbols-outlined" style="font-size:16px; color:var(--color-error);">crisis_alert</span>
+                            New Posting — En Route
+                        </div>
+                        <div class="reassign-pending-location" id="reassign-pending-name">—</div>
+                        <div class="reassign-pending-meta" id="reassign-pending-meta">—</div>
+                    </div>
+                    <button class="btn btn-success" id="btn-mark-arrived" style="flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+                        Mark Arrived
+                    </button>
+                </div>
+            </div>
+
+            <!-- ─────────────────────────────────
+                 SECTION 2: Current Post / Location
+                 ───────────────────────────────── -->
+            <section>
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">Your Current Post</div>
+                        <div class="section-sub">Live location &amp; situational data</div>
+                    </div>
+                </div>
+
+                <!-- Status Banner -->
+                <div class="status-banner">
+                    <div class="status-banner-left">
+                        <div class="status-banner-label">Posted At</div>
+                        <div class="status-banner-location" id="post-name">—</div>
+                        <div class="status-banner-meta">
+                            <div class="status-meta-item">
+                                <span class="material-symbols-outlined">location_city</span>
+                                <span id="post-zone">—</span>
+                            </div>
+                            <div class="status-meta-item">
+                                <span class="material-symbols-outlined">grid_view</span>
+                                <span id="post-sector">—</span>
+                            </div>
+                            <div class="status-meta-item">
+                                <span class="material-symbols-outlined">directions_car</span>
+                                <span id="post-congestion">—</span>
+                            </div>
+                            <div class="status-meta-item">
+                                <span class="material-symbols-outlined">warning_amber</span>
+                                <span id="post-incidents">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="status-banner-right">
+                        <div class="risk-score-display">
+                            <span id="post-risk-score">—</span><span>/100</span>
+                        </div>
+                        <div class="risk-badge-lg risk-high" id="post-risk-badge">—</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─────────────────────────────────
+                 SECTION 3: Location Map Preview + Info Grid
+                 ───────────────────────────────── -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="material-symbols-outlined">map</span>
+                    Location Overview
+                </div>
+
+                <!-- Mini map preview -->
+                <div class="map-preview">
+                    <div class="map-preview-overlay"></div>
+                    <div class="map-preview-pin">
+                        <div class="pin-dot"></div>
+                    </div>
+                    <div class="map-preview-label" id="map-label">📍 —</div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-item-icon">
+                            <span class="material-symbols-outlined">warning_amber</span>
+                        </div>
+                        <div class="info-item-text">
+                            <div class="info-item-label">Active Incidents</div>
+                            <div class="info-item-value" id="info-active-incidents">—</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-item-icon">
+                            <span class="material-symbols-outlined">traffic</span>
+                        </div>
+                        <div class="info-item-text">
+                            <div class="info-item-label">Congestion</div>
+                            <div class="info-item-value" id="info-congestion">—</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-item-icon">
+                            <span class="material-symbols-outlined">location_city</span>
+                        </div>
+                        <div class="info-item-text">
+                            <div class="info-item-label">Zone</div>
+                            <div class="info-item-value" id="info-zone">—</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-item-icon">
+                            <span class="material-symbols-outlined">grid_view</span>
+                        </div>
+                        <div class="info-item-text">
+                            <div class="info-item-label">Sector</div>
+                            <div class="info-item-value" id="info-sector">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─────────────────────────────────
+                 SECTION 4: Post Briefing
+                 ───────────────────────────────── -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="material-symbols-outlined">description</span>
+                    Post Briefing
+                </div>
+                <p id="post-description" style="font-size:14px; color:var(--color-on-surface-variant); line-height:1.7; margin-bottom:12px;">—</p>
+                <div style="background:var(--color-surface-container-low); border-left:3px solid var(--color-primary); border-radius:0 var(--rounded-md) var(--rounded-md) 0; padding:12px 14px;">
+                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--color-primary); margin-bottom:4px;">
+                        <span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle;">task_alt</span>
+                        Standing Instructions
+                    </div>
+                    <p id="post-instructions" style="font-size:13px; color:var(--color-on-surface); line-height:1.6;">—</p>
+                </div>
+            </div>
+
+            <!-- ─────────────────────────────────
+                 SECTION 5: Quick Actions
+                 (Mark Arrived removed — now in reassignment banner)
+                 ───────────────────────────────── -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="material-symbols-outlined">bolt</span>
+                    Quick Actions
+                </div>
+                <div class="quick-actions">
+                    <button class="quick-action-btn" id="btn-report-incident">
+                        <span class="material-symbols-outlined">report</span>
+                        <span class="qa-label">Report Incident</span>
+                    </button>
+                    <button class="quick-action-btn" id="btn-backup">
+                        <span class="material-symbols-outlined">group_add</span>
+                        <span class="qa-label">Request Backup</span>
+                    </button>
+                    <button class="quick-action-btn" id="btn-view-map">
+                        <span class="material-symbols-outlined">explore</span>
+                        <span class="qa-label">Full City Map</span>
+                    </button>
+                    <button class="quick-action-btn" id="btn-sos">
+                        <span class="material-symbols-outlined" style="color:#dc2626;">sos</span>
+                        <span class="qa-label">SOS / Emergency</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ─────────────────────────────────
+                 SECTION 6: Live Alerts Feed
+                 (with "Mark Task Complete" voting)
+                 ───────────────────────────────── -->
+            <div class="card">
+                <div class="card-title">
+                    <span class="material-symbols-outlined">notifications_active</span>
+                    Live Alerts — Your Post
+                </div>
+                <div class="alert-list" id="alert-list">
+                    <!-- Populated by dashboard.js -->
+                </div>
+            </div>
+
+            <!-- ─────────────────────────────────
+                 SECTION 7: Duty Status Button
+                 Red "Go Off Duty" / Green "Go On Duty"
+                 ───────────────────────────────── -->
+            <div class="card">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                    <div>
+                        <div style="font-size:15px; font-weight:700; color:var(--color-on-surface); margin-bottom:3px;">Duty Status</div>
+                        <div style="display:flex; align-items:center; gap:7px;">
+                            <span class="pulse-dot green" id="duty-dot-bottom"></span>
+                            <span id="duty-label-bottom" style="font-size:13px; color:var(--color-on-surface-variant); font-weight:500;">Currently On Duty</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" id="btn-duty-toggle" style="min-width:160px;">
+                        <span class="material-symbols-outlined" style="font-size:18px;" id="duty-btn-icon">do_not_disturb_on</span>
+                        <span id="duty-btn-label">Go Off Duty</span>
+                    </button>
+                </div>
+            </div>
+
+        </div><!-- /officer-container -->
+    </main>
+</div><!-- /officer-layout -->
+
+
+<!-- ══════════════════════════════════════════════
+     CRISIS REASSIGNMENT POPUP MODAL
+     Officer acknowledges here → "En Route"
+     Post only updates when "Mark Arrived" is clicked
+     in the banner above.
+     ══════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="crisis-modal" role="dialog" aria-modal="true" aria-labelledby="crisis-modal-title">
+    <div class="modal-container crisis-modal">
+
+        <!-- Header -->
+        <div class="modal-header">
+            <div class="modal-header-icon icon-crisis">
+                <span class="material-symbols-outlined">crisis_alert</span>
+            </div>
+            <div class="modal-header-text">
+                <div class="modal-header-title" id="crisis-modal-title">⚠️ Emergency Reassignment</div>
+                <div class="modal-header-sub">Urgent order from Command Center</div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body">
+            <p style="font-size:13px; color:var(--color-on-surface-variant); margin-bottom:14px; line-height:1.6;">
+                The Command Center has reassigned your post due to a critical situation.
+                Acknowledge to confirm you are en route. Your post will update once you <strong>Mark Arrived</strong>.
+            </p>
+
+            <div class="reassign-detail">
+                <div class="reassign-row">
+                    <span class="material-symbols-outlined">location_off</span>
+                    <span class="reassign-row-label">From</span>
+                    <span class="reassign-row-value" id="crisis-modal-from">—</span>
+                </div>
+                <div class="reassign-row">
+                    <span class="material-symbols-outlined">location_on</span>
+                    <span class="reassign-row-label">To</span>
+                    <span class="reassign-row-value" id="crisis-modal-to" style="color:var(--color-error); font-weight:800;">—</span>
+                </div>
+                <div class="reassign-row">
+                    <span class="material-symbols-outlined">location_city</span>
+                    <span class="reassign-row-label">Zone</span>
+                    <span class="reassign-row-value" id="crisis-modal-zone">—</span>
+                </div>
+                <div class="reassign-row">
+                    <span class="material-symbols-outlined">monitoring</span>
+                    <span class="reassign-row-label">Risk</span>
+                    <span class="reassign-row-value" id="crisis-modal-risk" style="color:var(--color-error);">—</span>
+                </div>
+                <div class="reassign-row">
+                    <span class="material-symbols-outlined">info</span>
+                    <span class="reassign-row-label">Reason</span>
+                    <span class="reassign-row-value" id="crisis-modal-reason" style="white-space:normal; line-height:1.4;">—</span>
+                </div>
+            </div>
+
+            <div style="background:var(--color-error-container); color:var(--color-on-error-container); border-radius:var(--rounded-md); padding:10px 14px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:8px;">
+                <span class="material-symbols-outlined" style="font-size:16px;">timer</span>
+                Proceed immediately. Tap "Mark Arrived" once you reach the new location.
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-ghost" id="btn-crisis-clarify">
+                <span class="material-symbols-outlined" style="font-size:16px;">help</span>
+                Request Clarification
+            </button>
+            <button class="btn btn-danger" id="btn-crisis-ack">
+                <span class="material-symbols-outlined" style="font-size:16px;">directions_run</span>
+                En Route
+            </button>
+        </div>
+
+    </div>
+</div>
+<!-- /crisis-modal -->
+
+
+<script src="js/main.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

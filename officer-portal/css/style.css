@@ -1,0 +1,437 @@
+/* ==========================================================================
+   PravahAI Officer Portal — Core Style System (style.css)
+   ========================================================================== */
+
+/* Design Tokens — inherited / consistent with admin portal */
+:root {
+    /* M3-inspired color roles */
+    --color-surface: #f0f4ff;
+    --color-surface-dim: #c8d6f4;
+    --color-surface-bright: #f8f9ff;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #eaf0ff;
+    --color-surface-container: #e0eaff;
+    --color-surface-container-high: #d6e4ff;
+    --color-surface-container-highest: #ccdeff;
+    --color-on-surface: #0b1c30;
+    --color-on-surface-variant: #44474e;
+    --color-inverse-surface: #1e2f45;
+    --color-inverse-on-surface: #eaf1ff;
+    --color-outline: #74777f;
+    --color-outline-variant: #c4c6cf;
+
+    /* Primary Brand: Police Deep Blue */
+    --color-primary: #002046;
+    --color-on-primary: #ffffff;
+    --color-primary-container: #1b365d;
+    --color-on-primary-container: #87a0cd;
+    --color-inverse-primary: #aec7f7;
+
+    /* Accent: Officer Gold */
+    --color-accent: #b8860b;
+    --color-accent-container: #fff3c4;
+    --color-on-accent-container: #7a5800;
+
+    /* Success: Safe/Arrived Green */
+    --color-secondary: #1b6d24;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #c8f5c0;
+    --color-on-secondary-container: #185c1f;
+
+    /* Warning: Crisis Orange */
+    --color-warning: #b45309;
+    --color-warning-container: #ffedd5;
+    --color-on-warning-container: #7c3d00;
+
+    /* Critical: Emergency Red */
+    --color-error: #ba1a1a;
+    --color-on-error: #ffffff;
+    --color-error-container: #ffdad6;
+    --color-on-error-container: #93000a;
+
+    /* Background */
+    --color-background: #f0f4ff;
+    --color-on-background: #0b1c30;
+
+    /* Fixed Layout & Spacing */
+    --spacing-unit: 4px;
+    --spacing-container-padding: 20px;
+    --spacing-gutter: 16px;
+    --header-height: 60px;
+
+    /* Shapes & Radii */
+    --rounded-sm: 0.125rem;
+    --rounded-default: 0.375rem;
+    --rounded-md: 0.5rem;
+    --rounded-lg: 0.75rem;
+    --rounded-xl: 1rem;
+    --rounded-full: 9999px;
+
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] {
+    --color-surface: #111827;
+    --color-surface-dim: #090e18;
+    --color-surface-bright: #1a2438;
+    --color-surface-container-lowest: #080c14;
+    --color-surface-container-low: #121c2c;
+    --color-surface-container: #1a2438;
+    --color-surface-container-high: #222f48;
+    --color-surface-container-highest: #2c3c5a;
+    --color-on-surface: #dce8ff;
+    --color-on-surface-variant: #9ba4b8;
+    --color-inverse-surface: #f0f4ff;
+    --color-inverse-on-surface: #0b1c30;
+    --color-outline: #8590a4;
+    --color-outline-variant: #3a4355;
+
+    --color-primary: #7ea8d8;
+    --color-on-primary: #001333;
+    --color-primary-container: #0f2a4a;
+    --color-on-primary-container: #b8d4ff;
+    --color-inverse-primary: #002046;
+
+    --color-background: #090e18;
+    --color-on-background: #dce8ff;
+
+    --color-secondary-container: #0d3d14;
+    --color-on-secondary-container: #a3f69c;
+
+    --color-warning-container: #4a2000;
+    --color-on-warning-container: #ffba7a;
+
+    --color-error-container: #5c0000;
+    --color-on-error-container: #ffb4ab;
+
+    --color-accent: #d4a820;
+    --color-accent-container: #3d2e00;
+    --color-on-accent-container: #ffe082;
+}
+
+/* Base Resets */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    font-family: var(--font-family);
+    background-color: var(--color-background);
+    color: var(--color-on-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Typography */
+.text-display-lg {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 40px;
+    letter-spacing: -0.03em;
+}
+.text-headline-md {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 28px;
+    letter-spacing: -0.01em;
+}
+.text-headline-sm {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 24px;
+}
+.text-body-lg {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+}
+.text-body-md {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+}
+.text-label-caps {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 16px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+.text-label-sm {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 14px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--color-outline-variant);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-outline);
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Keyframe Animations */
+@keyframes pulse-ring {
+    0%   { transform: scale(0.85); opacity: 0.8; }
+    70%  { transform: scale(2);    opacity: 0; }
+    100% { transform: scale(2);    opacity: 0; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-6px); }
+    30% { transform: translateX(6px); }
+    45% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    75% { transform: translateX(-2px); }
+    90% { transform: translateX(2px); }
+}
+
+@keyframes slide-down {
+    from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0)     scale(1);    }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes bounce-in {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* ————————————————————————————————————————
+   LOGIN PAGE LAYOUT
+   ———————————————————————————————————————— */
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #001533 0%, #002046 50%, #003070 100%);
+    position: relative;
+    overflow: hidden;
+    padding: 24px;
+}
+
+.login-bg-decor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.login-bg-decor .circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.97);
+    border-radius: var(--rounded-xl);
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 24px 64px rgba(0, 0, 50, 0.35);
+    animation: slide-down 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    z-index: 1;
+}
+
+[data-theme="dark"] .login-card {
+    background: var(--color-surface-container-low);
+    border: 1px solid var(--color-outline-variant);
+}
+
+.login-logo-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 28px;
+    gap: 10px;
+}
+
+.login-emblem {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--rounded-full);
+    border: 2px solid var(--color-primary);
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 32, 70, 0.2);
+}
+
+.login-title {
+    color: var(--color-primary);
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-align: center;
+}
+
+[data-theme="dark"] .login-title { color: var(--color-on-surface); }
+
+.login-subtitle {
+    color: var(--color-on-surface-variant);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* ————————————————————————————————————————
+   DASHBOARD LAYOUT
+   ———————————————————————————————————————— */
+.officer-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-background);
+}
+
+/* Top Header Bar */
+.officer-header {
+    height: var(--header-height);
+    background: linear-gradient(90deg, var(--color-primary) 0%, #1b365d 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-container-padding);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0, 0, 50, 0.25);
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .officer-header {
+    background: linear-gradient(90deg, #080e1c 0%, #0f1e36 100%);
+    border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.officer-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.officer-header-brand img {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--rounded-full);
+    border: 1px solid rgba(255,255,255,0.3);
+    object-fit: cover;
+}
+
+.officer-header-brand .brand-name {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.officer-header-brand .brand-sub {
+    color: rgba(255,255,255,0.6);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.officer-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-icon-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: var(--rounded-full);
+    color: #fff;
+    cursor: pointer;
+    padding: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    position: relative;
+}
+
+.header-icon-btn:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.header-notif-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background-color: #ef4444;
+    border-radius: var(--rounded-full);
+    border: 1.5px solid #1b365d;
+    display: none;
+}
+
+.officer-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--rounded-full);
+    border: 2px solid rgba(255,255,255,0.4);
+    object-fit: cover;
+    cursor: pointer;
+}
+
+/* Main Scroll Area */
+.officer-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-container-padding);
+}
+
+.officer-container {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-bottom: 40px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .login-card {
+        padding: 28px 24px;
+    }
+    .officer-main {
+        padding: 14px;
+    }
+    .officer-header {
+        padding: 0 14px;
+    }
+}

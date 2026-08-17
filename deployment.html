@@ -99,17 +99,6 @@
                             </div>
                         </div>
 
-                        <!-- Card 2 -->
-                        <div class="kpi-card">
-                            <div class="kpi-header">
-                                <h3 class="kpi-title">Average Battery</h3>
-                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-on-tertiary-container);">battery_charging_full</span>
-                            </div>
-                            <div class="kpi-value-container">
-                                <span class="text-display-lg kpi-value">78%</span>
-                                <span class="text-body-md" style="color: var(--color-on-surface-variant); font-weight: 500;">All units online</span>
-                            </div>
-                        </div>
 
                         <!-- Card 3 -->
                         <div class="kpi-card">
@@ -152,7 +141,6 @@
                                 <select class="form-control select-control" id="status-filter">
                                     <option value="all">All Statuses</option>
                                     <option value="Active">Active</option>
-                                    <option value="Standby">Standby</option>
                                     <option value="Off-Duty">Off-Duty</option>
                                 </select>
                             </div>
@@ -166,10 +154,9 @@
                                         <tr>
                                             <th>Unit ID</th>
                                             <th>Officer / Contact</th>
-                                            <th>Sector Area</th>
+                                            <th>Current Post</th>
                                             <th>Squad Code</th>
                                             <th>Duty Status</th>
-                                            <th>Battery Status</th>
                                             <th>Command Options</th>
                                         </tr>
                                     </thead>
@@ -202,12 +189,11 @@
                     </p>
                     
                     <div class="form-group">
-                        <label for="reassign-sector">Sector Allocation</label>
-                        <select class="form-control select-control" id="reassign-sector" required>
-                            <option value="Sitabuldi">Sitabuldi</option>
-                            <option value="Zero Mile">Zero Mile</option>
-                            <option value="Wardha Road">Wardha Road</option>
-                            <option value="Sadar Junction">Sadar Junction</option>
+                        <label for="reassign-post">New Posting Location</label>
+                        <select class="form-control select-control" id="reassign-post" required>
+                            <option value="P01">Zero Mile Stone Junction (High Risk)</option>
+                            <option value="P02">Variety Square (Medium Risk)</option>
+                            <option value="P03">Sitabuldi Interchange (Low Risk)</option>
                         </select>
                     </div>
 
@@ -221,12 +207,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="reassign-status">Duty Status</label>
-                        <select class="form-control select-control" id="reassign-status" required>
-                            <option value="Active">Active</option>
-                            <option value="Standby">Standby</option>
-                            <option value="Off-Duty">Off-Duty</option>
-                        </select>
+                        <label for="reassign-reason">Reason for Reassignment</label>
+                        <input class="form-control" id="reassign-reason" type="text" placeholder="e.g. Emergency reinforcement, VIP route clearance..." required/>
                     </div>
                 </div>
                 <div class="modal-footer">

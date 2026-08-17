@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>PravahAI — Officer Login</title>
+    <meta name="description" content="Secure login portal for Nagpur City Police field officers. Access your deployment information and real-time alerts."/>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="css/style.css"/>
+    <link rel="stylesheet" href="css/components.css"/>
+    <link rel="stylesheet" href="css/pages.css"/>
+</head>
+<body>
+
+<div class="login-page" id="login-page">
+
+    <!-- Background decorative circles -->
+    <div class="login-bg-decor" aria-hidden="true">
+        <div class="circle" style="width:320px;height:320px;top:-60px;left:-80px;"></div>
+        <div class="circle" style="width:200px;height:200px;bottom:40px;right:-40px;"></div>
+        <div class="circle" style="width:120px;height:120px;bottom:160px;left:60px;"></div>
+        <div class="circle" style="width:80px;height:80px;top:40%;right:20%;"></div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-card">
+
+        <!-- Branding -->
+        <div class="login-logo-wrap">
+            <img
+                class="login-emblem"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"
+                alt="Nagpur City Police Emblem"
+            />
+            <div>
+                <div class="login-title">PravahAI Officer Portal</div>
+                <div class="login-subtitle">Nagpur City Police — Field Operations</div>
+            </div>
+        </div>
+
+        <!-- Error banner -->
+        <div class="login-error" id="login-error" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span id="login-error-text">Invalid credentials.</span>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" novalidate>
+
+            <div class="form-group">
+                <label for="badge-id">Badge / Officer ID</label>
+                <div class="input-icon-wrap">
+                    <span class="material-symbols-outlined">badge</span>
+                    <input
+                        class="form-control"
+                        type="text"
+                        id="badge-id"
+                        name="badge-id"
+                        placeholder="e.g. B-2247"
+                        autocomplete="username"
+                        autocapitalize="characters"
+                        spellcheck="false"
+                        required
+                    />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-icon-wrap">
+                    <span class="material-symbols-outlined">lock</span>
+                    <input
+                        class="form-control"
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    />
+                    <button type="button" class="pw-toggle" id="pw-toggle-btn" title="Show/hide password" aria-label="Toggle password visibility">
+                        <span class="material-symbols-outlined" id="pw-toggle-icon">visibility_off</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading spinner (hidden by default) -->
+            <span id="login-spinner" style="display:none; margin-right:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                     style="animation: spin 0.8s linear infinite; vertical-align: middle;">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                    <path d="M12 2 a10 10 0 0 1 10 10" stroke-opacity="1"/>
+                </svg>
+            </span>
+
+            <button class="btn btn-primary btn-full" type="submit" id="login-submit" style="margin-top:6px;">
+                <span class="material-symbols-outlined" style="font-size:18px;">login</span>
+                Sign In
+            </button>
+
+        </form>
+
+        <div class="login-divider">Demo Credentials</div>
+        <div style="background:var(--color-surface-container-low); border:1px solid var(--color-outline-variant); border-radius:var(--rounded-md); padding:12px 14px; font-size:12px; color:var(--color-on-surface-variant); line-height:1.8;">
+            <strong style="color:var(--color-on-surface);">Badge:</strong> B-2247 &nbsp;|&nbsp;
+            <strong style="color:var(--color-on-surface);">Password:</strong> pravah2247<br/>
+            <em style="font-size:11px;">Or: B-1012 / officer1012 &nbsp;|&nbsp; B-0033 / sentinel33</em>
+        </div>
+
+        <div class="login-footer-text">
+            Authorised personnel only. All activity is logged and monitored.
+        </div>
+    </div>
+</div>
+
+<!-- Spin keyframe (inline, small) -->
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script src="js/main.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>
