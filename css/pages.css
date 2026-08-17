@@ -463,3 +463,124 @@
     font-family: Inter, sans-serif !important;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
 }
+
+/* --------------------------------------------------------------------------
+   SECTION 6.4 PERSONNEL ALLOCATION COMMAND PANEL STYLES
+   -------------------------------------------------------------------------- */
+.alloc-command-card {
+    background: linear-gradient(135deg, var(--color-surface-container-lowest) 0%, var(--color-surface-container-low) 100%);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--rounded-xl);
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.alloc-command-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--color-outline-variant);
+    padding-bottom: 16px;
+}
+
+.strategy-segmented-control {
+    display: flex;
+    background: var(--color-surface-container);
+    border-radius: var(--rounded-lg);
+    padding: 4px;
+    gap: 4px;
+    border: 1px solid var(--color-outline-variant);
+    flex-wrap: wrap;
+}
+
+.strategy-btn {
+    border: none;
+    background: transparent;
+    padding: 8px 14px;
+    border-radius: var(--rounded-md);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-on-surface-variant);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.strategy-btn:hover {
+    color: var(--color-primary);
+    background: rgba(0, 32, 70, 0.05);
+}
+
+.strategy-btn.active {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    box-shadow: 0 2px 8px rgba(0, 32, 70, 0.25);
+}
+
+.alloc-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.alloc-metric-card {
+    background: var(--color-surface-container-lowest);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--rounded-lg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.alloc-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.badge-locked {
+    background-color: #002046;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: var(--rounded-sm);
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.badge-dispatched {
+    background-color: #1b6d24;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: var(--rounded-sm);
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Pulsing Hotspot Marker Glow */
+@keyframes pulseGlow {
+    0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.6); }
+    70% { transform: scale(1.08); opacity: 0.9; box-shadow: 0 0 0 12px rgba(186, 26, 26, 0); }
+    100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(186, 26, 26, 0); }
+}
+
+.hotspot-pulse-high {
+    animation: pulseGlow 2s infinite;
+}
+
