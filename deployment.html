@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Nagpur Traffic Ops - Officers Deployment</title>
+    <title>PravahAI - Deployments</title>
     <!-- Google Fonts: Inter & Material Symbols -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -15,48 +15,64 @@
     <link href="css/pages.css" rel="stylesheet"/>
 </head>
 <body>
+    <!-- Floating Menu Toggle for Mobile Screens -->
+    <button class="menu-toggle-floating" id="menu-toggle">
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+    </button>
+
     <div class="app-layout">
         <!-- Sidebar Navigation Component -->
         <aside class="app-sidebar">
             <div class="sidebar-header">
-                <img class="sidebar-logo" alt="Nagpur City Police Emblem" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
+                <img class="sidebar-logo" alt="PravahAI Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
                 <div class="sidebar-header-titles">
-                    <h2>Nagpur Traffic Ops</h2>
-                    <p class="text-label-sm">Command Center Alpha</p>
+                    <h2>PravahAI</h2>
+                    <p class="text-label-sm" id="sidebar-clock"></p>
                 </div>
             </div>
             
             <nav class="sidebar-nav">
                 <a class="nav-item" href="index.html">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    <span>Dashboard</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">map</span>
+                    <span>Live Map</span>
                 </a>
                 <a class="nav-item active" href="deployment.html">
-                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_add</span>
-                    <span>Deployment</span>
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-variation-settings: 'FILL' 1;">local_police</span>
+                    <span>Deployments</span>
                 </a>
                 <a class="nav-item" href="risk-analysis.html">
-                    <span class="material-symbols-outlined">analytics</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
                     <span>Risk Analysis</span>
                 </a>
-                <a class="nav-item" href="risk-analysis.html">
-                    <span class="material-symbols-outlined">compare_arrows</span>
-                    <span>Analytics</span>
+                <a class="nav-item" href="incidents.html">
+                    <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                    <span>Incidents Log</span>
                 </a>
             </nav>
 
             <div class="sidebar-footer">
-                <button class="btn btn-danger" style="width: 100%;">
-                    <span class="material-symbols-outlined">warning</span>
+                <button class="btn btn-danger" id="btn-emergency-override" style="width: 100%; margin-bottom: 8px;">
+                    <span class="material-symbols-outlined" aria-hidden="true">warning</span>
                     Emergency Override
                 </button>
+                
+                <div style="display: flex; gap: 8px; justify-content: space-between; margin-bottom: 8px;">
+                    <button class="btn-icon" id="theme-toggle" style="flex: 1; height: 36px; padding: 0;">
+                        <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
+                    </button>
+                    <button class="btn-icon" id="sidebar-notifications" style="flex: 1; height: 36px; padding: 0; position: relative;">
+                        <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+                        <span class="badge-dot" style="display: none; top: 4px; right: 4px;"></span>
+                    </button>
+                </div>
+
                 <div class="sidebar-footer-nav">
                     <a class="nav-item" href="#">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">settings</span>
                         <span>Settings</span>
                     </a>
                     <a class="nav-item" href="#">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">help</span>
+                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">help</span>
                         <span>Support</span>
                     </a>
                 </div>
@@ -65,44 +81,6 @@
 
         <!-- Main Canvas Content Area -->
         <div class="main-canvas">
-            <!-- Header bar / TopAppBar -->
-            <header class="top-appbar">
-                <div class="top-brand">
-                    <button class="menu-toggle" id="menu-toggle">
-                        <span class="material-symbols-outlined">menu</span>
-                    </button>
-                    <h1>Nagpur City Risk Management</h1>
-                </div>
-                
-                <nav class="top-nav">
-                    <a class="top-nav-link" href="index.html">Live Map</a>
-                    <a class="top-nav-link" href="incidents.html">Incidents</a>
-                    <a class="top-nav-link active" href="deployment.html">Resources</a>
-                </nav>
-
-                <div class="top-actions">
-                    <div class="search-container">
-                        <span class="material-symbols-outlined search-icon" style="font-size: 18px;">search</span>
-                        <input class="search-input" id="officer-search-global" placeholder="Search operational grid..." type="text"/>
-                    </div>
-                    
-                    <button class="btn btn-primary" id="theme-toggle" data-tooltip="Switch Theme" style="padding: 6px; border-radius: var(--rounded-full); background: transparent; border: 1px solid var(--color-outline-variant); color: var(--color-on-surface-variant);">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">dark_mode</span>
-                    </button>
-                    
-                    <div class="action-divider"></div>
-                    
-                    <button class="icon-btn" data-tooltip="System Notifications">
-                        <span class="material-symbols-outlined">notifications</span>
-                        <span class="badge-dot" style="display: none;"></span>
-                    </button>
-                    <button class="icon-btn" data-tooltip="Account Officer">
-                        <span class="material-symbols-outlined">account_circle</span>
-                    </button>
-                    <img class="profile-avatar" alt="Officer Profile Headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzh2rsFvAFzyIXKC7FW5Uxn0_xUrHi-1DgnHn58dcq706gjNyfaLRcMWzQoEM2bvFusepFCo9neQBRTFy6BL_WI7yJWb7hgxklR06ZSxuUFDeiSA5tv2qX0DQSnwToz_TmS9LgdgG15rbku0uSA8hEPdR8i8pWeU_SKSKSJVLVoRfBssan351AjedBQI-cuIxJdflxPtQBmdZMLozaGkYNXRgwu292RLnw9Fe09BLVzU2H6BQFasv_bg"/>
-                </div>
-            </header>
-
             <!-- Main dashboard scroll area -->
             <main class="workspace-scroll">
                 <div class="workspace-container">
@@ -113,7 +91,7 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Active Resources</h3>
-                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-secondary);">engineering</span>
+                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-secondary);">engineering</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value" id="active-officers-count">4</span>
@@ -125,7 +103,7 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Average Battery</h3>
-                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-on-tertiary-container);">battery_charging_full</span>
+                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-on-tertiary-container);">battery_charging_full</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value">78%</span>
@@ -137,7 +115,7 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Total Fleet</h3>
-                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-primary);">directions_car</span>
+                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-primary);">directions_car</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value">22</span>
@@ -215,7 +193,7 @@
                 <div class="modal-header">
                     <h3>Reassign Duty Parameters</h3>
                     <button class="btn-icon" id="close-modal-btn" type="button">
-                        <span class="material-symbols-outlined">close</span>
+                        <span class="material-symbols-outlined" aria-hidden="true">close</span>
                     </button>
                 </div>
                 <div class="modal-body">
