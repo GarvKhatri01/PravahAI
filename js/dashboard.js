@@ -731,33 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Emergency Override Logic (fixed: use innerHTML not textContent to preserve icon)
-        if (btnEmergency) {
-            let overrideActive = false;
-            btnEmergency.addEventListener('click', () => {
-                if (overrideActive) {
-                    // Second click cancels override
-                    overrideActive = false;
-                    btnEmergency.innerHTML = '<span class="material-symbols-outlined">warning</span> Emergency Override';
-                    btnEmergency.style.backgroundColor = '';
-                    window.dispatchSystemAlert('Override Cancelled', 'Traffic systems restored to normal control.', 'info');
-                    return;
-                }
-                const confirmed = confirm('CRITICAL: Trigger manual emergency override? All intersections switch to flashing yellow mode.');
-                if (confirmed) {
-                    overrideActive = true;
-                    btnEmergency.innerHTML = '<span class="material-symbols-outlined">emergency</span> OVERRIDE ACTIVE';
-                    btnEmergency.style.backgroundColor = '#7f1d1d';
-                    btnEmergency.style.animation = 'pulse-ring 1.5s infinite';
-                    window.dispatchSystemAlert('🚨 Emergency Override Active', 'All traffic systems shifted to manual caution state. Click again to cancel.', 'critical');
-                    appendFeedItem('Command Override', 'Manual emergency override activated. All intersections — flashing yellow mode.', '🚨 OVERRIDE', 'critical');
 
-                    const s = RiskEngine.getState();
-                    RiskEngine.updateState({ unmannedZones: Math.min(8, s.unmannedZones + 2) });
-                    refreshFromModel();
-                }
-            });
-        }
     }
 
     // Dynamic Incident Simulator — pushes into RiskEngine and re-scores
