@@ -36,39 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.map = map;
 
-    // Dark/Light tile layers constrained to Nagpur bounds
-    const tileLayers = {
-        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 18,
-            minZoom: 11,
-            bounds: NAGPUR_BOUNDS,
-            subdomains: 'abcd'
-        }),
-        light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 18,
-            minZoom: 11,
-            bounds: NAGPUR_BOUNDS,
-            subdomains: 'abcd'
-        })
-    };
-
-    // Set initial theme layer synced with DOM data-theme attribute
-    const currentTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme') || 'light';
-    if (tileLayers[currentTheme]) {
-        tileLayers[currentTheme].addTo(map);
-    } else {
-        tileLayers.light.addTo(map);
-    }
-
-    // Listen to theme changes to dynamically swap tiles
-    window.addEventListener('themechanged', (e) => {
-        const theme = e.detail;
-        if (map.hasLayer(tileLayers.dark)) map.removeLayer(tileLayers.dark);
-        if (map.hasLayer(tileLayers.light)) map.removeLayer(tileLayers.light);
-        if (tileLayers[theme]) {
-            tileLayers[theme].addTo(map);
-        }
+    // Force map to always render light/white tiles as requested
+    const mapTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 18,
+        minZoom: 11,
+        bounds: NAGPUR_BOUNDS,
+        subdomains: 'abcd'
     });
+    mapTiles.addTo(map);
 
     // Add zoom control at bottom right
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -490,7 +465,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleHeatmap = document.getElementById('toggle-heatmap');
     const toggleUnits = document.getElementById('toggle-units');
     const btnRecenter = document.getElementById('btn-recenter');
-    const btnToggleRight = document.getElementById('toggle-right-panel');
 
     // Load comm feed from real API on page load
     loadCommFeedFromAPI();
@@ -759,37 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Toggle Right Sidebar Panel
-        const rightPanel = document.getElementById('right-side-panel');
-        if (btnToggleRight && rightPanel) {
-            // Restore saved state from local storage
-            const isCollapsed = localStorage.getItem('right-panel-collapsed') === 'true';
-            if (isCollapsed) {
-                rightPanel.classList.add('collapsed');
-                btnToggleRight.classList.remove('active');
-                btnToggleRight.style.backgroundColor = '';
-                setTimeout(() => {
-                    if (window.map) window.map.invalidateSize();
-                }, 100);
-            } else {
-                btnToggleRight.classList.add('active');
-                btnToggleRight.style.backgroundColor = 'var(--color-surface-container-highest)';
-            }
 
-            btnToggleRight.addEventListener('click', () => {
-                const nowCollapsed = rightPanel.classList.toggle('collapsed');
-                localStorage.setItem('right-panel-collapsed', nowCollapsed);
-                btnToggleRight.classList.toggle('active', !nowCollapsed);
-                btnToggleRight.style.backgroundColor = !nowCollapsed ? 'var(--color-surface-container-highest)' : '';
-                
-                // Recalculate Leaflet tile size after sliding animation completes
-                setTimeout(() => {
-                    if (window.map) {
-                        window.map.invalidateSize({ animate: true });
-                    }
-                }, 310);
-            });
-        }
 
         // Simulate incident logic
         if (btnSimulate) {

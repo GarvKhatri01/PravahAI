@@ -30,13 +30,17 @@
     <div class="app-layout">
         <!-- Sidebar Navigation Component -->
         <aside class="app-sidebar">
-            <div class="sidebar-header">
-                <img class="sidebar-logo" alt="PravahAI Logo"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg" />
-                <div class="sidebar-header-titles">
-                    <h2>PravahAI</h2>
-                    <p class="text-label-sm" id="sidebar-clock"></p>
+            <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img class="sidebar-logo" alt="PravahAI Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg" />
+                    <div class="sidebar-header-titles">
+                        <h2>PravahAI</h2>
+                        <p class="text-label-sm" id="sidebar-clock"></p>
+                    </div>
                 </div>
+                <button class="btn-icon" id="sidebar-collapse-btn" title="Collapse Sidebar" style="background: none; border: none; color: var(--color-on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: var(--rounded-md);">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">menu_open</span>
+                </button>
             </div>
 
             <nav class="sidebar-nav">

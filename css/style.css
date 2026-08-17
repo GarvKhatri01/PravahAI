@@ -189,8 +189,17 @@ html, body {
     height: 100%;
     z-index: 100;
     flex-shrink: 0;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease, background-color 0.25s ease;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease, background-color 0.25s ease;
     box-shadow: 1px 0 4px rgba(0, 0, 0, 0.02);
+}
+
+/* Collapsible Navigation Sidebar Styles */
+.app-layout.sidebar-collapsed .app-sidebar {
+    margin-left: calc(-1 * var(--sidebar-width));
+}
+
+.app-layout.sidebar-collapsed .menu-toggle-floating {
+    display: flex;
 }
 
 .sidebar-header {

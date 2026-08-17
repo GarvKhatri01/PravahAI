@@ -37,12 +37,17 @@
     <div class="app-layout">
         <!-- Sidebar Navigation Component -->
         <aside class="app-sidebar">
-            <div class="sidebar-header">
-                <img class="sidebar-logo" alt="PravahAI Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
-                <div class="sidebar-header-titles">
-                    <h2>PravahAI</h2>
-                    <p class="text-label-sm" id="sidebar-clock"></p>
+            <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img class="sidebar-logo" alt="PravahAI Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
+                    <div class="sidebar-header-titles">
+                        <h2>PravahAI</h2>
+                        <p class="text-label-sm" id="sidebar-clock"></p>
+                    </div>
                 </div>
+                <button class="btn-icon" id="sidebar-collapse-btn" title="Collapse Sidebar" style="background: none; border: none; color: var(--color-on-surface-variant); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: var(--rounded-md);">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">menu_open</span>
+                </button>
             </div>
             
             <nav class="sidebar-nav">
@@ -156,13 +161,11 @@
                                 </span>
                             </div>
                         </div>
-                    </section>
-
-                    <!-- Main Dashboard Split Layout -->
+                    </section>                    <!-- Main Dashboard Split Layout -->
                     <div class="dashboard-grid">
                         
-                        <!-- Main Left Column: Map and Junction Rankings -->
-                        <div class="main-display-area">
+                        <!-- Main Full-Width Column: Map and Junction Rankings -->
+                        <div class="main-display-area" style="width: 100%;">
                             <!-- Left Panel: Live Cartographic Map -->
                             <section class="map-canvas-container">
                                 <div class="map-toolbar">
@@ -176,10 +179,6 @@
                                         <div class="map-tools-divider"></div>
                                         <button class="btn-icon" id="btn-recenter">
                                             <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 20px;">my_location</span>
-                                        </button>
-                                        <div class="map-tools-divider"></div>
-                                        <button class="btn-icon active" id="toggle-right-panel" title="Toggle Right Side Panel" style="background-color: var(--color-surface-container-highest);">
-                                            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 20px;">view_sidebar</span>
                                         </button>
                                         <div class="map-tools-divider"></div>
                                         <span id="data-source-badge" title="Traffic data source" style="font-size: 11px; font-weight: 700; cursor: default; padding: 2px 8px; display: flex; align-items: center; justify-content: center; height: 100%; min-width: 90px; color: var(--color-outline);">⏳ Connecting...</span>
@@ -276,41 +275,7 @@
                             </div>
                         </div>
 
-                        <!-- Right Panel: Commands Feed & Actions -->
-                        <aside id="right-side-panel" class="right-panel">
-                            <!-- Quick Command Controls -->
-                            <div class="card" style="flex-shrink: 0;">
-                                <h3 class="card-title">Command Actions</h3>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <button class="btn btn-ghost" id="btn-simulate" style="height: 80px; flex-direction: column; text-align: center;">
-                                        <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 24px;">add_alert</span>
-                                        <span>Simulate Incident</span>
-                                    </button>
-                                    <button class="btn btn-primary" id="btn-broadcast" style="height: 80px; flex-direction: column; text-align: center;">
-                                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 24px;">cell_tower</span>
-                                        <span>Broadcast Alert</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Live Feed List -->
-                            <div class="comm-feed-container">
-                                <div class="comm-feed-header">
-                                    <h3 class="card-title" style="margin-bottom: 0;">Live Comm Feed</h3>
-                                    <a href="incidents.html" style="color: var(--color-primary); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none;">View All</a>
-                                </div>
-                                
-                                <div class="comm-feed-list" id="comm-feed-list">
-                                    <!-- Populated dynamically from /api/incidents by dashboard.js -->
-                                    <div style="padding: 24px; text-align:center; color: var(--color-outline); font-size: 12px;">
-                                        <span class="material-symbols-outlined" style="font-size: 20px; display:block; margin-bottom:6px;">sensors</span>
-                                        Loading live incidents...
-                                    </div>
-                                </div>
-                            </div>
-                        </aside>
-
-                    </div>
+                    </div>        </div>
 
                 </div>
             </main>
