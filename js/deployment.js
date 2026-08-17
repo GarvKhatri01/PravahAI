@@ -97,12 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const postName   = POSTS_MAP[officer.postId] || officer.postId;
 
             // Show "En Route" if admin reassignment is pending and officer hasn't arrived yet
-            const pendingRaw  = localStorage.getItem(`pravah_reassign_${officer.id}`);
-            const pendingPost = pendingRaw ? JSON.parse(pendingRaw) : null;
-
-            const postDisplay = pendingPost
+            const pendingPostId = officer._pendingPostId || null;
+            const postDisplay = pendingPostId
                 ? `<div style="font-weight:700;color:var(--color-error);">${postName} <span style="font-size:10px;">(current)</span></div>
-                   <div style="font-size:11px;color:var(--color-error);font-weight:600;">→ En route: ${POSTS_MAP[pendingPost.postId] || pendingPost.postId}</div>`
+                   <div style="font-size:11px;color:var(--color-error);font-weight:600;display:flex;align-items:center;gap:4px;">
+                       <span class="material-symbols-outlined" style="font-size:13px;">directions_car</span>
+                       En route &rarr; ${POSTS_MAP[pendingPostId] || pendingPostId}
+                   </div>`
                 : `<div style="font-weight:600;color:var(--color-primary);">${postName}</div>`;
 
             tr.innerHTML = `
@@ -177,7 +178,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const reason    = (document.getElementById('reassign-reason').value.trim())
                         || 'Emergency redeployment required by Command';
 
-        officer.postId = newPostId;
+        // Store the pending post ID separately — don't update officer.postId yet.
+        // Admin table shows "En Route" until officer confirms arrival.
+        officer._pendingPostId = newPostId;
         officer.unit   = newUnit;
         officer.status = 'Active';
 
@@ -218,6 +221,111 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ——————————————————————————————————————————
+       ARRIVAL LISTENER
+       Polls localStorage for pravah_arrived written by officer portal
+       when officer clicks "Mark Arrived" on dashboard.
+       Updates officer's postId to the confirmed new location.
+       —————————————————————————————————————————— */
+    let _lastArrivedTimestamp = 0;
+
+    function initArrivalListener() {
+        function checkArrival() {
+            const raw = localStorage.getItem('pravah_arrived');
+            if (!raw) return;
+            let signal;
+            try { signal = JSON.parse(raw); } catch { return; }
+
+            // Only process signals newer than last seen
+            if (!signal || signal.timestamp <= _lastArrivedTimestamp) return;
+            _lastArrivedTimestamp = signal.timestamp;
+
+            const officer = officers.find(o => o.id === signal.officerId);
+            if (!officer) return;
+
+            // Confirm the new post
+            officer.postId         = signal.postId;
+            officer._pendingPostId = null;
+
+            // Clear the pending reassign signal
+            localStorage.removeItem(`pravah_reassign_${officer.id}`);
+
+            // Re-render table to show new confirmed post
+            renderTable();
+
+            // Update map marker label if map is running
+            if (window._deployMap && window._deployMarkers) {
+                const marker  = window._deployMarkers[officer.id];
+                const postName = POSTS_MAP[signal.postId] || signal.postId;
+                if (marker) {
+                    marker.setPopupContent(
+                        buildPopupHTML(officer, postName)
+                    );
+                }
+            }
+
+            // Show a toast in admin portal
+            showAdminToast(`✅ ${officer.name} has arrived at ${POSTS_MAP[signal.postId] || signal.postId}`);
+        }
+
+        // Poll every 3 seconds
+        setInterval(checkArrival, 3000);
+
+        // Also react instantly to cross-tab storage events
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'pravah_arrived') checkArrival();
+        });
+    }
+
+    initArrivalListener();
+
+    /* Simple toast for admin portal */
+    function showAdminToast(msg) {
+        let toast = document.getElementById('admin-arrival-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'admin-arrival-toast';
+            toast.style.cssText = `
+                position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+                background: #002046; color: #fff;
+                padding: 12px 20px; border-radius: 10px;
+                font-size: 13px; font-weight: 600;
+                box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+                display: flex; align-items: center; gap: 10px;
+                transition: opacity 0.4s ease, transform 0.4s ease;
+                opacity: 0; transform: translateY(12px);
+            `;
+            document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(12px)';
+        }, 4000);
+    }
+
+    /* Helper: build Leaflet popup HTML for a given officer + postName */
+    function buildPopupHTML(officer, postName) {
+        const badgeColor = officer.status === 'Active' ? '#1b6d24' : '#74777f';
+        return `
+            <div style="font-family: Inter, sans-serif; padding: 6px 2px; min-width: 200px;">
+                <div style="font-weight: 800; font-size: 13px; color: #002046; margin-bottom: 6px;">${officer.name}</div>
+                <div style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #444;">
+                    <div><strong>Unit ID:</strong> ${officer.id}</div>
+                    <div><strong>Post:</strong> ${postName}</div>
+                    <div><strong>Squad:</strong> ${officer.unit}</div>
+                    <div><strong>Contact:</strong> ${officer.contact}</div>
+                    <div><strong>Coords:</strong> ${officer.lat.toFixed(4)}, ${officer.lon.toFixed(4)}</div>
+                    <div style="margin-top: 4px;">
+                        <span style="background:${badgeColor}; color:#fff; font-weight:700; padding:2px 8px; border-radius:4px; font-size:10px;">${officer.status}</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+
        DEPLOYMENT MAP — plots all officer coords
        —————————————————————————————————————————— */
     initDeploymentMap();
@@ -259,36 +367,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
+        // Expose for arrival listener
+        window._deployMap     = deployMap;
+        window._deployMarkers = {};
+
         const bounds = [];
 
         officers.forEach(officer => {
             const postName = POSTS_MAP[officer.postId] || officer.postId;
-            const badgeColor = officer.status === 'Active' ? '#1b6d24' : '#74777f';
 
             const marker = L.marker([officer.lat, officer.lon], {
                 icon: officerIcon(officer.status),
                 title: officer.name
             });
 
-            marker.bindPopup(`
-                <div style="font-family: Inter, sans-serif; padding: 6px 2px; min-width: 200px;">
-                    <div style="font-weight: 800; font-size: 13px; color: #002046; margin-bottom: 6px;">
-                        ${officer.name}
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #444;">
-                        <div><strong>Unit ID:</strong> ${officer.id}</div>
-                        <div><strong>Post:</strong> ${postName}</div>
-                        <div><strong>Squad:</strong> ${officer.unit}</div>
-                        <div><strong>Contact:</strong> ${officer.contact}</div>
-                        <div><strong>Coords:</strong> ${officer.lat.toFixed(4)}, ${officer.lon.toFixed(4)}</div>
-                        <div style="margin-top: 4px;">
-                            <span style="background:${badgeColor}; color:#fff; font-weight:700; padding:2px 8px; border-radius:4px; font-size:10px;">${officer.status}</span>
-                        </div>
-                    </div>
-                </div>
-            `, { maxWidth: 260 });
-
+            marker.bindPopup(buildPopupHTML(officer, postName), { maxWidth: 260 });
             marker.addTo(deployMap);
+
+            // Register for live updates
+            window._deployMarkers[officer.id] = marker;
             bounds.push([officer.lat, officer.lon]);
         });
 
