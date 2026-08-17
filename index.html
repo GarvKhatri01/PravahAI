@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Nagpur Traffic Ops - Command Center Dashboard</title>
+    <title>PravahAI - Dashboard</title>
     <!-- Google Fonts: Inter & Material Symbols -->
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -15,48 +15,64 @@
     <link href="css/pages.css" rel="stylesheet"/>
 </head>
 <body>
+    <!-- Floating Menu Toggle for Mobile Screens -->
+    <button class="menu-toggle-floating" id="menu-toggle">
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+    </button>
+
     <div class="app-layout">
         <!-- Sidebar Navigation Component -->
         <aside class="app-sidebar">
             <div class="sidebar-header">
-                <img class="sidebar-logo" alt="Nagpur City Police Emblem" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
+                <img class="sidebar-logo" alt="PravahAI Logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1u4_PHbPAb5YMQvvXD06GFZObAYrRPrg64x7hYnvHqcPRZzT9PHhMim1rCLYd4HS0uMCNrktELyekH3_v2iJFqMxxH3bd9hME3I-k7rwxICfZrtaorP3zOFwu0NEMrQX3N2GKvlQsJOreVz3po8-UaXscwHTC2kuxrQIUh012bdW73Q8eYjpj1E8UjlsICHUGUyNXFpbWnVVaswz04-fC-QlGWJ6OX_mhBfRFhRV-HqGL5bhy3-2icg"/>
                 <div class="sidebar-header-titles">
-                    <h2>Nagpur Traffic Ops</h2>
-                    <p class="text-label-sm">Command Center Alpha</p>
+                    <h2>PravahAI</h2>
+                    <p class="text-label-sm" id="sidebar-clock"></p>
                 </div>
             </div>
             
             <nav class="sidebar-nav">
                 <a class="nav-item active" href="index.html">
-                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
-                    <span>Dashboard</span>
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-variation-settings: 'FILL' 1;">map</span>
+                    <span>Live Map</span>
                 </a>
                 <a class="nav-item" href="deployment.html">
-                    <span class="material-symbols-outlined">person_add</span>
-                    <span>Deployment</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">local_police</span>
+                    <span>Deployments</span>
                 </a>
                 <a class="nav-item" href="risk-analysis.html">
-                    <span class="material-symbols-outlined">analytics</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
                     <span>Risk Analysis</span>
                 </a>
-                <a class="nav-item" href="risk-analysis.html">
-                    <span class="material-symbols-outlined">compare_arrows</span>
-                    <span>Analytics</span>
+                <a class="nav-item" href="incidents.html">
+                    <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+                    <span>Incidents Log</span>
                 </a>
             </nav>
 
             <div class="sidebar-footer">
-                <button class="btn btn-danger" id="btn-emergency-override" style="width: 100%;">
-                    <span class="material-symbols-outlined">warning</span>
+                <button class="btn btn-danger" id="btn-emergency-override" style="width: 100%; margin-bottom: 8px;">
+                    <span class="material-symbols-outlined" aria-hidden="true">warning</span>
                     Emergency Override
                 </button>
+                
+                <div style="display: flex; gap: 8px; justify-content: space-between; margin-bottom: 8px;">
+                    <button class="btn-icon" id="theme-toggle" style="flex: 1; height: 36px; padding: 0;">
+                        <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
+                    </button>
+                    <button class="btn-icon" id="sidebar-notifications" style="flex: 1; height: 36px; padding: 0; position: relative;">
+                        <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+                        <span class="badge-dot" style="display: none; top: 4px; right: 4px;"></span>
+                    </button>
+                </div>
+
                 <div class="sidebar-footer-nav">
                     <a class="nav-item" href="#">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">settings</span>
                         <span>Settings</span>
                     </a>
                     <a class="nav-item" href="#">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">help</span>
+                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">help</span>
                         <span>Support</span>
                     </a>
                 </div>
@@ -65,44 +81,6 @@
 
         <!-- Main Canvas Content Area -->
         <div class="main-canvas">
-            <!-- Header bar / TopAppBar -->
-            <header class="top-appbar">
-                <div class="top-brand">
-                    <button class="menu-toggle" id="menu-toggle">
-                        <span class="material-symbols-outlined">menu</span>
-                    </button>
-                    <h1>Nagpur City Risk Management</h1>
-                </div>
-                
-                <nav class="top-nav">
-                    <a class="top-nav-link active" href="index.html">Live Map</a>
-                    <a class="top-nav-link" href="incidents.html">Incidents</a>
-                    <a class="top-nav-link" href="deployment.html">Resources</a>
-                </nav>
-
-                <div class="top-actions">
-                    <div class="search-container">
-                        <span class="material-symbols-outlined search-icon" style="font-size: 18px;">search</span>
-                        <input class="search-input" placeholder="Search operational grid..." type="text"/>
-                    </div>
-                    
-                    <button class="btn btn-primary" id="theme-toggle" data-tooltip="Switch Theme" style="padding: 6px; border-radius: var(--rounded-full); background: transparent; border: 1px solid var(--color-outline-variant); color: var(--color-on-surface-variant);">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">dark_mode</span>
-                    </button>
-                    
-                    <div class="action-divider"></div>
-                    
-                    <button class="icon-btn" data-tooltip="System Notifications">
-                        <span class="material-symbols-outlined">notifications</span>
-                        <span class="badge-dot" style="display: none;"></span>
-                    </button>
-                    <button class="icon-btn" data-tooltip="Account Officer">
-                        <span class="material-symbols-outlined">account_circle</span>
-                    </button>
-                    <img class="profile-avatar" alt="Officer Profile Headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzh2rsFvAFzyIXKC7FW5Uxn0_xUrHi-1DgnHn58dcq706gjNyfaLRcMWzQoEM2bvFusepFCo9neQBRTFy6BL_WI7yJWb7hgxklR06ZSxuUFDeiSA5tv2qX0DQSnwToz_TmS9LgdgG15rbku0uSA8hEPdR8i8pWeU_SKSKSJVLVoRfBssan351AjedBQI-cuIxJdflxPtQBmdZMLozaGkYNXRgwu292RLnw9Fe09BLVzU2H6BQFasv_bg"/>
-                </div>
-            </header>
-
             <!-- Main dashboard scroll area -->
             <main class="workspace-scroll">
                 <div class="workspace-container">
@@ -113,12 +91,12 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">City-wide Risk Score</h3>
-                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-tertiary-container);">monitoring</span>
+                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-tertiary-container);">monitoring</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value">64<span class="text-headline-md" style="color: var(--color-outline);">/100</span></span>
                                 <span class="badge badge-warning">
-                                    <span class="material-symbols-outlined" style="font-size: 14px;">arrow_upward</span> +4
+                                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 14px;">arrow_upward</span> +4
                                 </span>
                             </div>
                         </div>
@@ -127,7 +105,7 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Active Incidents</h3>
-                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-error);">warning_amber</span>
+                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-error);">warning_amber</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value">12</span>
@@ -139,7 +117,7 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Officers On-Duty</h3>
-                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-secondary);">local_police</span>
+                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-secondary);">local_police</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value">145</span>
@@ -151,7 +129,7 @@
                         <div class="kpi-card">
                             <div class="kpi-header">
                                 <h3 class="kpi-title">Unmanned High-Risk</h3>
-                                <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-outline);">location_off</span>
+                                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px; color: var(--color-outline);">location_off</span>
                             </div>
                             <div class="kpi-value-container">
                                 <span class="text-display-lg kpi-value">4</span>
@@ -168,15 +146,15 @@
                         <section class="map-canvas-container">
                             <div class="map-toolbar">
                                 <div class="map-tools-group">
-                                    <button class="btn-icon" id="toggle-heatmap" title="Heatmap Layer">
-                                        <span class="material-symbols-outlined" style="font-size: 20px;">layers</span>
+                                    <button class="btn-icon" id="toggle-heatmap">
+                                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 20px;">layers</span>
                                     </button>
-                                    <button class="btn-icon active" id="toggle-units" title="Unit Layer" style="background-color: var(--color-surface-container-highest);">
-                                        <span class="material-symbols-outlined" style="font-size: 20px;">directions_car</span>
+                                    <button class="btn-icon active" id="toggle-units" style="background-color: var(--color-surface-container-highest);">
+                                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 20px;">directions_car</span>
                                     </button>
                                     <div class="map-tools-divider"></div>
-                                    <button class="btn-icon" id="btn-recenter" title="Recenter Map">
-                                        <span class="material-symbols-outlined" style="font-size: 20px;">my_location</span>
+                                    <button class="btn-icon" id="btn-recenter">
+                                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 20px;">my_location</span>
                                     </button>
                                 </div>
                                 
@@ -209,11 +187,11 @@
                                 <h3 class="card-title">Command Actions</h3>
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                                     <button class="btn btn-ghost" id="btn-simulate" style="height: 80px; flex-direction: column; text-align: center;">
-                                        <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 24px;">add_alert</span>
+                                        <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 24px;">add_alert</span>
                                         <span>Simulate Incident</span>
                                     </button>
                                     <button class="btn btn-primary" id="btn-broadcast" style="height: 80px; flex-direction: column; text-align: center;">
-                                        <span class="material-symbols-outlined" style="font-size: 24px;">cell_tower</span>
+                                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 24px;">cell_tower</span>
                                         <span>Broadcast Alert</span>
                                     </button>
                                 </div>
@@ -234,11 +212,11 @@
                                                 <span class="badge badge-critical">High Risk</span>
                                                 <span class="comm-feed-time">Just now</span>
                                             </div>
-                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" style="font-size: 16px;">more_vert</span></button>
+                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">more_vert</span></button>
                                         </div>
                                         <p class="text-body-md comm-feed-desc" style="font-weight: 500;">High Risk congestion pattern detected at <strong>Zero Mile Stone</strong>.</p>
                                         <div class="comm-feed-details text-data-tabular">
-                                            <span class="material-symbols-outlined" style="font-size: 14px;">speed</span>
+                                            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 14px;">speed</span>
                                             Velocity drop &gt; 40%
                                         </div>
                                     </div>
@@ -249,11 +227,11 @@
                                                 <span class="badge badge-elevated">Accident</span>
                                                 <span class="comm-feed-time">4 min ago</span>
                                             </div>
-                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" style="font-size: 16px;">more_vert</span></button>
+                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">more_vert</span></button>
                                         </div>
                                         <p class="text-body-md comm-feed-desc" style="font-weight: 500;">Accident reported near <strong>Variety Square</strong>. Eastbound lanes partially blocked.</p>
                                         <div class="comm-feed-details text-data-tabular">
-                                            <span class="material-symbols-outlined" style="font-size: 14px;">directions_car</span>
+                                            <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 14px;">directions_car</span>
                                             Unit 42 dispatched
                                         </div>
                                     </div>
@@ -264,7 +242,7 @@
                                                 <span class="badge badge-system">System</span>
                                                 <span class="comm-feed-time">12 min ago</span>
                                             </div>
-                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" style="font-size: 16px;">more_vert</span></button>
+                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">more_vert</span></button>
                                         </div>
                                         <p class="text-body-md comm-feed-desc" style="font-weight: 500;">Shift change initiated. Sector B deployment updated successfully.</p>
                                     </div>
@@ -274,7 +252,7 @@
                                             <div class="comm-feed-meta">
                                                 <span class="comm-feed-time">28 min ago</span>
                                             </div>
-                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" style="font-size: 16px;">more_vert</span></button>
+                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">more_vert</span></button>
                                         </div>
                                         <p class="text-body-md comm-feed-desc" style="color: var(--color-on-surface-variant);">Routine camera maintenance completed at Sitabuldi interchange.</p>
                                     </div>

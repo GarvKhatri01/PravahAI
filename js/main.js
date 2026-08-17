@@ -47,10 +47,8 @@ function updateThemeIcon(btn, theme) {
     
     if (theme === 'dark') {
         icon.textContent = 'light_mode';
-        btn.setAttribute('data-tooltip', 'Switch to Light Mode');
     } else {
         icon.textContent = 'dark_mode';
-        btn.setAttribute('data-tooltip', 'Switch to Dark Mode');
     }
 }
 
@@ -93,13 +91,13 @@ function initMobileSidebar() {
  * Display command center real-time clock
  */
 function initSystemClock() {
-    const clockLabel = document.querySelector('.sidebar-header-titles p');
+    const clockLabel = document.getElementById('sidebar-clock');
     if (!clockLabel) return;
     
     const updateTime = () => {
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        clockLabel.textContent = `Command Alpha | ${timeStr}`;
+        clockLabel.textContent = timeStr;
     };
     
     updateTime();

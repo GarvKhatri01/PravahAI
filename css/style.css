@@ -290,128 +290,28 @@ html, body {
     background-color: var(--color-background);
 }
 
-/* Top App Bar Styling */
-.top-appbar {
-    height: var(--header-height);
-    background-color: var(--color-surface-bright);
-    border-bottom: 1px solid var(--color-outline-variant);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 var(--spacing-gutter);
-    z-index: 90;
-    flex-shrink: 0;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-    transition: background-color 0.25s ease, border-color 0.25s ease;
-}
-
-.top-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.menu-toggle {
+/* Floating Menu Toggle for Mobile viewports */
+.menu-toggle-floating {
     display: none;
-    background: none;
-    border: none;
-    color: var(--color-on-surface-variant);
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 80;
+    background-color: var(--color-surface-container-lowest);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--rounded-md);
+    color: var(--color-on-surface);
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    padding: 8px;
-    border-radius: var(--rounded-default);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: background-color 0.2s ease;
 }
 
-.menu-toggle:hover {
+.menu-toggle-floating:hover {
     background-color: var(--color-surface-container);
-}
-
-.top-brand h1 {
-    color: var(--color-primary);
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-}
-[data-theme="dark"] .top-brand h1 {
-    color: var(--color-on-surface);
-}
-
-.top-nav {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    height: 100%;
-}
-
-.top-nav-link {
-    color: var(--color-on-surface-variant);
-    text-decoration: none;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    height: 100%;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s ease;
-}
-
-.top-nav-link:hover {
-    color: var(--color-primary);
-}
-[data-theme="dark"] .top-nav-link:hover {
-    color: var(--color-on-surface);
-}
-
-.top-nav-link.active {
-    color: var(--color-primary);
-    border-bottom: 2px solid var(--color-primary);
-    font-weight: 800;
-}
-[data-theme="dark"] .top-nav-link.active {
-    color: var(--color-on-surface);
-    border-bottom-color: var(--color-on-surface);
-}
-
-.top-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.search-container {
-    position: relative;
-}
-
-.search-input {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-outline-variant);
-    border-radius: var(--rounded-default);
-    padding: 8px 12px 8px 32px;
-    font-size: 14px;
-    height: 32px;
-    width: 200px;
-    color: var(--color-on-surface);
-    outline: none;
-    transition: all 0.2s ease;
-}
-
-.search-input:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-container);
-}
-
-.search-icon {
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--color-outline);
-    pointer-events: none;
-}
-
-.action-divider {
-    width: 1px;
-    height: 24px;
-    background-color: var(--color-outline-variant);
 }
 
 .icon-btn {
@@ -442,15 +342,6 @@ html, body {
     background-color: var(--color-error);
     border-radius: var(--rounded-full);
     border: 2px solid var(--color-surface-bright);
-}
-
-.profile-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--rounded-full);
-    border: 1px solid var(--color-outline);
-    object-fit: cover;
-    cursor: pointer;
 }
 
 /* Scrollable Main Workspace */
@@ -493,15 +384,9 @@ html, body {
 }
 
 /* Responsive Rules */
-@media (max-width: 1024px) {
-    .top-nav {
-        display: none;
-    }
-}
-
 @media (max-width: 768px) {
-    .menu-toggle {
-        display: block;
+    .menu-toggle-floating {
+        display: flex;
     }
     
     .app-sidebar {
@@ -527,10 +412,6 @@ html, body {
     
     .sidebar-overlay.active {
         display: block;
-    }
-
-    .search-container {
-        display: none;
     }
     
     .workspace-scroll {
