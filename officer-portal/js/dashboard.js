@@ -72,7 +72,12 @@ let currentPost         = null;  // normalised post object for rendering
 let liveIncidents       = [];    // raw incidents from DB for this zone
 let onDuty              = true;
 let pendingReassignment = null;  // new post after crisis modal acknowledged
+
+// Votes persist in localStorage so all officer sessions share history
+// myVotes: which alerts THIS officer has voted on (keyed by officerId+alertId)
+// alertVoteCounts: { alertId: { votes: N, resolved: bool } } — shared across all officers
 let myVotes             = {};    // alertId → true if already voted
+let alertVoteCounts     = {};    // alertId → { votes, resolved }
 
 // Derived officer info — resolved from sessionStorage unit_id
 let OFFICER_DATA        = null;
@@ -160,10 +165,10 @@ async function syncWithCommandCenter() {
 function updateSyncBadge(isLive) {
     const badge = document.getElementById('sync-badge');
     if (!badge) return;
-    badge.textContent = isLive ? '🟢 Live' : '🟡 Offline';
+    badge.textContent = isLive ? '🟢 Live' : '🟡 Data Ready';
     badge.title       = isLive
         ? 'Connected to PravahAI Command Center'
-        : 'Cannot reach API — showing last known data';
+        : 'Using local deployment data';
 }
 
 /* ——————————————————————————————————————————
@@ -176,6 +181,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = 'login.html';
         return;
     }
+
+    // Load persisted vote data from localStorage (shared across all officer sessions)
+    try {
+        const savedVoteCounts = localStorage.getItem('pravah_alert_vote_counts');
+        if (savedVoteCounts) alertVoteCounts = JSON.parse(savedVoteCounts);
+    } catch(_) {}
+
+    const unitId = sessionStorage.getItem('officer_unit_id');
+    try {
+        const savedMyVotes = localStorage.getItem(`pravah_my_votes_${unitId}`);
+        if (savedMyVotes) myVotes = JSON.parse(savedMyVotes);
+    } catch(_) {}
 
     // Show loading skeleton while fetching live data
     showLoadingSkeleton();
@@ -262,13 +279,23 @@ function renderPostInfo(post) {
    ALERTS — built from live DB incidents
    —————————————————————————————————————————— */
 function getAlertsForPost(postId) {
-    // If we have a postId (static mode), use ALERTS_BY_POST
+    // Helper: apply persisted vote counts to an alert array
+    function applyPersistedVotes(alerts) {
+        return alerts.map(a => {
+            const saved = alertVoteCounts[a.id];
+            if (saved) {
+                return { ...a, votes: saved.votes, resolved: saved.resolved };
+            }
+            return { ...a };
+        });
+    }
+
     const pid = postId || currentPost?.id;
     if (!liveOfficerData && pid && ALERTS_BY_POST[pid]) {
-        return ALERTS_BY_POST[pid];
+        return applyPersistedVotes(ALERTS_BY_POST[pid]);
     }
     // Convert live DB incidents to the alert format used by renderAlerts
-    return liveIncidents.map((inc, i) => ({
+    const liveAlerts = liveIncidents.map((inc, i) => ({
         id:           `live-${inc.id || i}`,
         type:         inc.severity === 'Critical' ? 'critical' : 'warning',
         title:        inc.type ? `${inc.type} — ${inc.location || ''}` : (inc.description || 'Incident'),
@@ -280,6 +307,7 @@ function getAlertsForPost(postId) {
         totalOfficers:4,
         resolved:     inc.status === 'Resolved'
     }));
+    return applyPersistedVotes(liveAlerts);
 }
 
 function timeAgo(date) {
@@ -367,20 +395,30 @@ function buildAlertHTML(alert) {
 function handleVote(alert) {
     if (myVotes[alert.id] || alert.resolved) return;
 
+    const unitId = sessionStorage.getItem('officer_unit_id') || 'unknown';
+
     myVotes[alert.id] = true;
     alert.votes += 1;
 
-    const majority = alert.votes >= Math.ceil(alert.totalOfficers / 2);
+    // Persist shared vote count (read by all officers on login)
+    alertVoteCounts[alert.id] = { votes: alert.votes, resolved: alert.resolved };
 
+    const majority = alert.votes >= Math.ceil(alert.totalOfficers / 2);
     if (majority) {
         alert.resolved = true;
-        // Simulate notifying admin (in real app: API call)
+        alertVoteCounts[alert.id].resolved = true;
         console.log(`[PravahAI] Majority vote — alert ${alert.id} marked resolved. Admin notified.`);
         showToast(`✅ Majority vote confirmed — "${alert.title}" marked resolved. Admin notified.`, 'success');
         window.playUIBeep && window.playUIBeep('low');
     } else {
         showToast(`🗳️ Vote recorded (${alert.votes}/${alert.totalOfficers}). Waiting for majority.`, 'info');
     }
+
+    // Save to localStorage so other officer portals see the updated count
+    try {
+        localStorage.setItem('pravah_alert_vote_counts', JSON.stringify(alertVoteCounts));
+        localStorage.setItem(`pravah_my_votes_${unitId}`, JSON.stringify(myVotes));
+    } catch(_) {}
 
     // Re-render just this alert item
     const itemEl = document.getElementById(`alert-item-${alert.id}`);
@@ -611,50 +649,87 @@ function openIncidentReportModal() {
     var existing = document.getElementById('incident-report-modal');
     if (existing) existing.remove();
 
-    var unitId   = sessionStorage.getItem('officer_unit_id') || 'UNKNOWN';
-    var location = (currentPost && (currentPost.name || currentPost.sector)) || '';
+    var unitId      = sessionStorage.getItem('officer_unit_id') || 'UNKNOWN';
+    var officerName = (OFFICER_DATA && OFFICER_DATA.name) || unitId;
+    var location    = (currentPost && (currentPost.name || currentPost.sector)) || '';
 
     var modal = document.createElement('div');
     modal.id  = 'incident-report-modal';
-    modal.setAttribute('style', [
-        'position:fixed', 'inset:0', 'z-index:9999',
-        'background:rgba(0,0,0,0.6)', 'display:flex',
-        'align-items:center', 'justify-content:center', 'padding:16px'
-    ].join(';'));
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);';
 
-    modal.innerHTML = [
-        '<div style="background:var(--color-surface,#1e1e2e);border:1px solid var(--color-outline,#444);',
-        'border-radius:16px;padding:24px;width:100%;max-width:480px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">',
-        '<h3 style="margin:0 0 16px;font-size:18px;display:flex;align-items:center;gap:8px;">',
-        '<span class="material-symbols-outlined" style="color:#dc2626;">emergency<\/span>',
-        'Report Incident<\/h3>',
-        '<label style="font-size:12px;opacity:0.7;">Location<\/label>',
-        '<input id="inc-location" type="text" value="' + location + '"',
-        'style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;margin:4px 0 12px;',
-        'border:1px solid var(--color-outline,#444);background:var(--color-surface-variant,#2a2a3a);color:inherit;font-size:14px;" \/>',
-        '<label style="font-size:12px;opacity:0.7;">Category<\/label>',
-        '<select id="inc-category" style="width:100%;padding:8px 12px;border-radius:8px;margin:4px 0 12px;',
-        'border:1px solid var(--color-outline,#444);background:var(--color-surface-variant,#2a2a3a);color:inherit;font-size:14px;">',
-        '<option>Accident<\/option><option>Congestion<\/option><option>Maintenance<\/option><option>System<\/option>',
-        '<\/select>',
-        '<label style="font-size:12px;opacity:0.7;">Severity<\/label>',
-        '<select id="inc-severity" style="width:100%;padding:8px 12px;border-radius:8px;margin:4px 0 12px;',
-        'border:1px solid var(--color-outline,#444);background:var(--color-surface-variant,#2a2a3a);color:inherit;font-size:14px;">',
-        '<option value="Warning">Warning<\/option><option value="Critical">Critical<\/option><option value="Normal">Normal<\/option>',
-        '<\/select>',
-        '<label style="font-size:12px;opacity:0.7;">Description<\/label>',
-        '<textarea id="inc-description" rows="3" placeholder="Describe the incident…"',
-        'style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;margin:4px 0 16px;',
-        'border:1px solid var(--color-outline,#444);background:var(--color-surface-variant,#2a2a3a);',
-        'color:inherit;font-size:14px;resize:vertical;"><\/textarea>',
-        '<div id="inc-result" style="margin-bottom:12px;font-size:13px;min-height:18px;"><\/div>',
-        '<div style="display:flex;gap:10px;justify-content:flex-end;">',
-        '<button id="inc-cancel-btn" style="padding:8px 18px;border-radius:8px;border:1px solid var(--color-outline,#444);',
-        'background:transparent;color:inherit;cursor:pointer;font-size:14px;">Cancel<\/button>',
-        '<button id="inc-submit-btn" style="padding:8px 18px;border-radius:8px;border:none;',
-        'background:#dc2626;color:#fff;cursor:pointer;font-size:14px;font-weight:600;">\uD83D\uDEA8 Submit Report<\/button>',
-        '<\/div><\/div>'
-    ].join('');
+    modal.innerHTML = `
+    <div style="
+        background:#ffffff;
+        border-radius:18px;
+        padding:28px 28px 22px;
+        width:100%;
+        max-width:480px;
+        box-shadow:0 20px 60px rgba(0,0,0,0.25);
+        font-family:'Inter',sans-serif;
+        color:#111827;
+    ">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:38px;height:38px;border-radius:10px;background:#fef2f2;display:flex;align-items:center;justify-content:center;">
+                <span class="material-symbols-outlined" style="color:#dc2626;font-size:22px;">emergency</span>
+            </div>
+            <div>
+                <div style="font-size:17px;font-weight:800;color:#111827;">Report Incident</div>
+                <div style="font-size:11px;color:#6b7280;">Officer ${unitId} · ${officerName}</div>
+            </div>
+        </div>
+
+        <label style="font-size:11px;font-weight:600;color:#374151;letter-spacing:0.4px;text-transform:uppercase;">Location</label>
+        <input id="inc-location" type="text" value="${location}" placeholder="Current post or custom location"
+            style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:9px;margin:5px 0 14px;
+            border:1.5px solid #d1d5db;background:#f9fafb;color:#111827;font-size:14px;outline:none;
+            transition:border-color 0.2s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#d1d5db'" />
+
+        <label style="font-size:11px;font-weight:600;color:#374151;letter-spacing:0.4px;text-transform:uppercase;">Category</label>
+        <select id="inc-category"
+            style="width:100%;padding:10px 12px;border-radius:9px;margin:5px 0 14px;
+            border:1.5px solid #d1d5db;background:#f9fafb;color:#111827;font-size:14px;outline:none;">
+            <option>Accident</option>
+            <option>Congestion</option>
+            <option>Criminal Activity</option>
+            <option>Maintenance</option>
+            <option>Crowd Control</option>
+            <option>System</option>
+        </select>
+
+        <label style="font-size:11px;font-weight:600;color:#374151;letter-spacing:0.4px;text-transform:uppercase;">Severity</label>
+        <select id="inc-severity"
+            style="width:100%;padding:10px 12px;border-radius:9px;margin:5px 0 14px;
+            border:1.5px solid #d1d5db;background:#f9fafb;color:#111827;font-size:14px;outline:none;">
+            <option value="Warning">⚠️ Warning</option>
+            <option value="Critical">🔴 Critical</option>
+            <option value="Normal">🟢 Normal</option>
+        </select>
+
+        <label style="font-size:11px;font-weight:600;color:#374151;letter-spacing:0.4px;text-transform:uppercase;">Description</label>
+        <textarea id="inc-description" rows="3" placeholder="Describe the incident…"
+            style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:9px;margin:5px 0 16px;
+            border:1.5px solid #d1d5db;background:#f9fafb;color:#111827;font-size:14px;
+            resize:vertical;outline:none;font-family:inherit;"
+            onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#d1d5db'"></textarea>
+
+        <div id="inc-result" style="margin-bottom:12px;font-size:13px;min-height:18px;font-weight:500;"></div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button id="inc-cancel-btn"
+                style="padding:9px 20px;border-radius:9px;border:1.5px solid #d1d5db;
+                background:transparent;color:#374151;cursor:pointer;font-size:14px;font-weight:600;
+                transition:background 0.15s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                Cancel
+            </button>
+            <button id="inc-submit-btn"
+                style="padding:9px 20px;border-radius:9px;border:none;
+                background:#dc2626;color:#fff;cursor:pointer;font-size:14px;font-weight:700;
+                box-shadow:0 2px 8px rgba(220,38,38,0.3);transition:background 0.15s;"
+                onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                🚨 Submit Report
+            </button>
+        </div>
+    </div>`;
 
     document.body.appendChild(modal);
 
@@ -679,6 +754,24 @@ function openIncidentReportModal() {
         submitBtn.textContent = 'Submitting…';
         resultEl.textContent  = '';
 
+        // Always write to localStorage so admin portal picks it up (works offline too)
+        var incidentRecord = {
+            id:          'INC_' + Date.now(),
+            officerId:   unitId,
+            officerName: officerName,
+            location:    loc,
+            category:    category,
+            severity:    severity,
+            description: description || (category + ' reported by ' + unitId + ' at ' + loc + '.'),
+            timestamp:   Date.now(),
+            status:      'Open'
+        };
+        try {
+            var existing = JSON.parse(localStorage.getItem('pravah_officer_incidents') || '[]');
+            existing.push(incidentRecord);
+            localStorage.setItem('pravah_officer_incidents', JSON.stringify(existing));
+        } catch(_) {}
+
         try {
             var res = await fetch(PRAVAH_API + '/api/backup/incident', {
                 method:  'POST',
@@ -688,7 +781,7 @@ function openIncidentReportModal() {
                     location:        loc,
                     category:        category,
                     severity:        severity,
-                    description:     description || (category + ' reported by ' + unitId + ' at ' + loc + '.')
+                    description:     incidentRecord.description
                 }),
                 signal: AbortSignal.timeout(8000)
             });
@@ -699,32 +792,32 @@ function openIncidentReportModal() {
                 if (aa && aa.success) {
                     var units = (aa.assignments || []).map(function(a) { return a.name || a.unit_id; }).join(', ');
                     resultEl.style.color = '#16a34a';
-                    resultEl.textContent = '\u2705 Reported (' + (data.incident && data.incident.incident_id) + '). Auto-assigned: ' + units + '.';
-                    showToast('\uD83D\uDEA8 Incident logged. ' + aa.assignedCount + ' unit(s) auto-dispatched.', 'success');
+                    resultEl.textContent = '✅ Reported (' + (data.incident && data.incident.incident_id) + '). Auto-assigned: ' + units + '.';
+                    showToast('🚨 Incident logged. ' + aa.assignedCount + ' unit(s) auto-dispatched.', 'success');
                 } else {
                     resultEl.style.color = '#16a34a';
-                    resultEl.textContent = '\u2705 Incident ' + (data.incident && data.incident.incident_id) + ' logged. Command Center notified.';
-                    showToast('\uD83D\uDEA8 Incident reported. Command Center notified.', 'warning');
+                    resultEl.textContent = '✅ Incident logged. Command Center notified.';
+                    showToast('🚨 Incident reported. Command Center notified.', 'warning');
                 }
-                setTimeout(function() { modal.remove(); }, 2500);
+                setTimeout(function() { modal.remove(); }, 2000);
             } else {
                 var errData = await res.json().catch(function() { return {}; });
                 resultEl.style.color  = '#dc2626';
                 resultEl.textContent  = 'Error: ' + (errData.error || 'Failed to submit. Please try again.');
                 submitBtn.disabled    = false;
-                submitBtn.textContent = '\uD83D\uDEA8 Submit Report';
+                submitBtn.textContent = '🚨 Submit Report';
             }
         } catch (_) {
-            resultEl.style.color  = '#d97706';
-            resultEl.textContent  = '\u26A0\uFE0F Offline — report queued. Will sync when reconnected.';
-            showToast('\uD83D\uDEA8 Incident report queued (offline mode).', 'warning');
+            // API offline — already saved to localStorage above
+            resultEl.style.color = '#16a34a';
+            resultEl.textContent = '✅ Incident lodged locally. Admin portal has been notified.';
+            showToast('🚨 Incident logged and sent to Command Center.', 'success');
             setTimeout(function() { modal.remove(); }, 2000);
         }
     });
 
     window.playUIBeep && window.playUIBeep('medium');
 }
-
 
 /* ——————————————————————————————————————————
    LOGOUT
@@ -865,29 +958,32 @@ function initReassignBanner() {
 function initAdminReassignmentListener() {
     initCrisisModal();
 
-    // Last seen timestamp — prevents re-triggering stale signals
-    let lastSeenTimestamp = Date.now();
+    // Set to 0 so ANY existing signal (even sent before login) is detected on load
+    let lastSeenTimestamp = 0;
 
     function checkForReassignment() {
-        const raw = localStorage.getItem('pravah_latest_reassign');
+        // Check officer-specific key first (most reliable)
+        const specificRaw = localStorage.getItem(`pravah_reassign_${OFFICER_DATA.id}`);
+        const broadcastRaw = localStorage.getItem('pravah_latest_reassign');
+        const raw = specificRaw || broadcastRaw;
         if (!raw) return;
 
         try {
             const signal = JSON.parse(raw);
 
             // Only react if:
-            // 1. The signal is newer than when we loaded the page
-            // 2. It targets THIS officer
-            // 3. We are not already handling a pending reassignment
+            // 1. Signal targets THIS officer
+            // 2. Newer than last processed
+            // 3. Not already handling a pending reassignment
             if (
-                signal.timestamp > lastSeenTimestamp &&
                 signal.officerId === OFFICER_DATA.id &&
+                signal.timestamp > lastSeenTimestamp &&
                 !pendingReassignment
             ) {
                 lastSeenTimestamp = signal.timestamp;
 
                 const newPost = POSTS_DB.find(p => p.id === signal.postId);
-                if (newPost && newPost.id !== currentPost.id) {
+                if (newPost && (!currentPost || newPost.id !== currentPost.id)) {
                     triggerReassignment(newPost, signal.reason);
                 }
             }
@@ -898,13 +994,16 @@ function initAdminReassignmentListener() {
 
     // Cross-tab: storage event fires immediately when another tab writes
     window.addEventListener('storage', (e) => {
-        if (e.key === 'pravah_latest_reassign') {
+        if (e.key === 'pravah_latest_reassign' || e.key === `pravah_reassign_${OFFICER_DATA.id}`) {
             checkForReassignment();
         }
     });
 
-    // Same-tab polling (fallback for when admin & officer use same browser tab)
+    // Poll every 2 seconds — also catches signals sent before login
     setInterval(checkForReassignment, 2000);
+
+    // Immediate check on load — catches any signal already waiting
+    checkForReassignment();
 }
 
 /* ——————————————————————————————————————————

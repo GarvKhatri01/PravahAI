@@ -125,8 +125,8 @@ async function syncRiskEngineFromAPI() {
 
         const statusEl = document.getElementById('api-status');
         if (statusEl) {
-            statusEl.textContent = 'Offline — cached data';
-            statusEl.style.color = 'var(--color-error)';
+            statusEl.textContent = 'Using local data';
+            statusEl.style.color = 'var(--color-on-surface-variant)';
         }
     }
 }

@@ -40,10 +40,47 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch {
             usingAPI = false; // silently fall back to local data
         }
+        mergeOfficerReportedIncidents();
         renderIncidents();
     }
 
+    // ── Merge officer-portal incidents from localStorage ───────────────────
+    function mergeOfficerReportedIncidents() {
+        try {
+            const raw = localStorage.getItem('pravah_officer_incidents');
+            if (!raw) return;
+            const officerIncs = JSON.parse(raw);
+
+            officerIncs.forEach(function(oi) {
+                // Avoid duplicates
+                if (!incidents.find(function(ex) { return ex.incident_id === oi.id; })) {
+                    incidents.unshift({
+                        incident_id:  oi.id,
+                        location:     oi.location,
+                        category:     oi.category,
+                        severity:     oi.severity,
+                        reported_at:  new Date(oi.timestamp).toISOString(),
+                        status:       oi.status || 'Logged',
+                        description:  oi.description + ' [Filed by ' + (oi.officerName || oi.officerId) + ']'
+                    });
+                }
+            });
+        } catch(_) {}
+    }
+
     loadIncidents();
+
+    // Poll localStorage every 10 s for new officer-reported incidents
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'pravah_officer_incidents') {
+            mergeOfficerReportedIncidents();
+            renderIncidents();
+        }
+    });
+    setInterval(function() {
+        mergeOfficerReportedIncidents();
+        renderIncidents();
+    }, 10000);
 
     // Attach listeners
     if (searchInput)    searchInput.addEventListener('input',    renderIncidents);
