@@ -18,6 +18,15 @@
     <link href="css/style.css" rel="stylesheet"/>
     <link href="css/components.css" rel="stylesheet"/>
     <link href="css/pages.css" rel="stylesheet"/>
+    <!-- Inline theme-init: apply saved theme BEFORE DOMContentLoaded to avoid tile layer race condition -->
+    <script>
+        (function() {
+            var saved = localStorage.getItem('theme');
+            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var theme = saved || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
 </head>
 <body>
     <!-- Floating Menu Toggle for Mobile Screens -->
@@ -228,41 +237,10 @@
                             </div>
                         </section>
 
-                        <!-- Right Panel: Commands Feed & Actions -->
+                        <!-- Right Panel: Junction Risk Rankings -->
                         <section style="display: flex; flex-direction: column; gap: var(--spacing-gutter); height: 100%;">
-                            <!-- Quick Command Controls -->
-                            <div class="card" style="flex-shrink: 0;">
-                                <h3 class="card-title">Command Actions</h3>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <button class="btn btn-ghost" id="btn-simulate" style="height: 80px; flex-direction: column; text-align: center;">
-                                        <span class="material-symbols-outlined" aria-hidden="true" style="color: var(--color-primary); font-size: 24px;">add_alert</span>
-                                        <span>Simulate Incident</span>
-                                    </button>
-                                    <button class="btn btn-primary" id="btn-broadcast" style="height: 80px; flex-direction: column; text-align: center;">
-                                        <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 24px;">cell_tower</span>
-                                        <span>Broadcast Alert</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Live Feed List -->
-                            <div class="comm-feed-container">
-                                <div class="comm-feed-header">
-                                    <h3 class="card-title" style="margin-bottom: 0;">Live Comm Feed</h3>
-                                    <a href="incidents.html" style="color: var(--color-primary); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none;">View All</a>
-                                </div>
-                                
-                                <div class="comm-feed-list" id="comm-feed-list">
-                                    <!-- Populated dynamically from /api/incidents by dashboard.js -->
-                                    <div style="padding: 24px; text-align:center; color: var(--color-outline); font-size: 12px;">
-                                        <span class="material-symbols-outlined" style="font-size: 20px; display:block; margin-bottom:6px;">sensors</span>
-                                        Loading live incidents...
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Sortable Junction Risk Rankings Side-Panel Table -->
-                            <div class="card" style="display: flex; flex-direction: column; gap: 12px; overflow: hidden;">
+                            <div class="card" style="display: flex; flex-direction: column; gap: 12px; overflow: hidden; height: 100%;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                                     <div>
                                         <h3 class="card-title" style="margin-bottom: 2px;">Junction Risk Rankings</h3>
@@ -274,7 +252,7 @@
                                     </button>
                                 </div>
 
-                                <div style="overflow-x: auto; max-height: 280px; overflow-y: auto; border-radius: var(--rounded-md, 6px); border: 1px solid var(--color-outline-variant);">
+                                <div style="overflow-x: auto; flex: 1; min-height: 480px; overflow-y: auto; border-radius: var(--rounded-md, 6px); border: 1px solid var(--color-outline-variant);">
                                     <table id="junction-rankings-table" style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; font-family: Inter, sans-serif;">
                                         <thead style="position: sticky; top: 0; background: var(--color-surface-container-high, #1e202e); z-index: 10;">
                                             <tr style="border-bottom: 1.5px solid var(--color-outline-variant); color: var(--color-on-surface-variant); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em;">
