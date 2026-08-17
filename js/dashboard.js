@@ -6,20 +6,148 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if we are on the dashboard index page
     if (!document.getElementById('map-viewport')) return;
 
-    // Simulated State
+    // NOTE: RiskEngine local seed is minimal — actual values are overwritten immediately
+    // by syncRiskEngineFromAPI() in main.js which fires on DOMContentLoaded.
+    RiskEngine.updateState({
+        incidents:           [],
+        officersOnDuty:      0,
+        totalOfficers:       0,
+        unmannedZones:       0,
+        totalHighRiskZones:  8,
+        avgTrafficVelocity:  0,
+        freeFlowVelocity:    55
+    });
+
+    // Initialize Leaflet Map
+    const map = L.map('map-viewport', {
+        zoomControl: false,
+        attributionControl: false
+    }).setView([21.1458, 79.0882], 13);
+
+    // Dark/Light tile layers
+    const tileLayers = {
+        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }),
+        light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 })
+    };
+
+    // Set initial theme layer
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    tileLayers[currentTheme].addTo(map);
+
+    // Listen to theme changes to dynamically swap tiles
+    window.addEventListener('themechanged', (e) => {
+        const theme = e.detail;
+        map.removeLayer(tileLayers.dark);
+        map.removeLayer(tileLayers.light);
+        tileLayers[theme].addTo(map);
+    });
+
+    // Add zoom control at bottom right
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    const markersGroup  = L.layerGroup().addTo(map);
+    const corridorsGroup = L.layerGroup().addTo(map);
+    const heatmapGroup   = L.layerGroup(); // NOT added to map by default — toggled on demand
+
+    // Map click event: Interactive click-to-log incident creation
+    map.on('click', (e) => {
+        const { lat, lng } = e.latlng;
+        
+        const popupContent = `
+            <div style="width: 250px; font-family: Inter, sans-serif; padding: 6px;">
+                <h4 style="margin: 0 0 8px 0; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--color-outline-variant); padding-bottom: 4px; color: var(--color-on-surface);">Log Incident at Location</h4>
+                <div style="font-size: 10px; color: var(--color-outline); margin-bottom: 8px;">Coords: ${lat.toFixed(4)}, ${lng.toFixed(4)}</div>
+                
+                <form id="map-incident-form" style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <label style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant);">Category</label>
+                        <select id="inc-category" style="padding: 4px; font-size:11px; border-radius: var(--rounded-sm); border:1px solid var(--color-outline-variant); background: var(--color-surface-container-lowest); color: var(--color-on-surface);">
+                            <option value="Congestion">Congestion</option>
+                            <option value="Accident">Accident</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="System">System</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <label style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant);">Severity</label>
+                        <select id="inc-severity" style="padding: 4px; font-size:11px; border-radius: var(--rounded-sm); border:1px solid var(--color-outline-variant); background: var(--color-surface-container-lowest); color: var(--color-on-surface);">
+                            <option value="Critical">Critical</option>
+                            <option value="Warning">Warning</option>
+                            <option value="Normal">Normal</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <label style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant);">Location Name</label>
+                        <input type="text" id="inc-loc-name" placeholder="e.g. Wardha Road" style="padding: 4px; font-size:11px; border-radius: var(--rounded-sm); border:1px solid var(--color-outline-variant); background: var(--color-surface-container-lowest); color: var(--color-on-surface);" required />
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <label style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--color-on-surface-variant);">Description</label>
+                        <textarea id="inc-desc" rows="2" placeholder="Brief details..." style="padding: 4px; font-size:11px; border-radius: var(--rounded-sm); border:1px solid var(--color-outline-variant); background: var(--color-surface-container-lowest); color: var(--color-on-surface); font-family:inherit;"></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" type="submit" style="font-size:11px; padding: 6px; margin-top:4px;">
+                        Create Incident
+                    </button>
+                </form>
+            </div>
+        `;
+
+        const popup = L.popup()
+            .setLatLng(e.latlng)
+            .setContent(popupContent)
+            .openOn(map);
+
+        setTimeout(() => {
+            const form = document.getElementById('map-incident-form');
+            if (form) {
+                form.addEventListener('submit', async (submitEvent) => {
+                    submitEvent.preventDefault();
+                    
+                    const category = document.getElementById('inc-category').value;
+                    const severity = document.getElementById('inc-severity').value;
+                    const location = document.getElementById('inc-loc-name').value;
+                    const description = document.getElementById('inc-desc').value;
+
+                    try {
+                        const response = await fetch(`${PRAVAH_API}/api/incidents`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ location, category, severity, description })
+                        });
+
+                        if (!response.ok) throw new Error('Failed to create incident');
+                        
+                        map.closePopup();
+                        window.dispatchSystemAlert('Incident Logged', `${category} at ${location}`, 'info');
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                });
+            }
+        }, 100);
+    });
+
+    const ZONE_ICONS = {
+        Critical: 'report',
+        Elevated: 'warning',
+        Watch:    'info',
+        Guarded:  'local_police',
+        Clear:    'local_police'
+    };
+
+    // App State
     const state = {
         metrics: {
-            riskScore: 64,
-            activeIncidents: 12,
-            criticalIncidents: 3,
+            riskScore: 0,
+            activeIncidents: 0,
+            criticalIncidents: 0,
             officersOnDuty: 145,
             unmannedRisks: 4
         },
-        markers: [
-            { id: 1, label: 'Zero Mile Stone', type: 'critical', top: '40%', left: '45%', desc: 'Heavy Congestion - Velocity drop > 40%', icon: 'report' },
-            { id: 2, label: 'Variety Square', type: 'elevated', top: '55%', left: '60%', desc: 'Accident reported. Eastbound lanes partially blocked.', icon: 'car_crash' },
-            { id: 3, label: 'Sitabuldi Interchange', type: 'normal', top: '30%', left: '65%', desc: 'Officer Ramesh Kumar - Patroling Wardha Rd', icon: 'local_police' }
-        ],
+        markers: [],
         heatmapActive: false,
         unitsActive: true
     };
@@ -34,184 +162,397 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleUnits = document.getElementById('toggle-units');
     const btnRecenter = document.getElementById('btn-recenter');
 
-    // Init Page Elements
-    renderMarkers();
+    // Load comm feed from real API on page load
+    loadCommFeedFromAPI();
+
+    // Check if main.js already fetched risk data before dashboard.js registered its listener
+    let apiSyncReceived = false;
+    if (window.__pravahRiskData && window.__pravahRiskData.zoneScores) {
+        apiSyncReceived = true;
+        refreshFromModel(window.__pravahRiskData);
+        updateDataSourceBadge(window.__pravahRiskData.meta?.trafficSource || 'simulation');
+    }
+
+    const fallbackTimer = setTimeout(() => {
+        if (!apiSyncReceived) refreshFromModel();
+    }, 1000);
+
+    // Init Controls
     initControls();
 
-    // Render Markers on Map
+    // Auto-refresh corridors from traffic API
+    fetchAndRenderCorridors();
+    setInterval(fetchAndRenderCorridors, 5 * 60 * 1000);
+
+    // Auto-refresh the model every 60 seconds to reflect time-of-day changes
+    setInterval(refreshFromModel, 60_000);
+
+    // Refresh immediately when the API sync fires (primary render path)
+    window.addEventListener('riskDataUpdated', (e) => {
+        const apiData = e.detail;
+        if (apiData && apiData.zoneScores) {
+            apiSyncReceived = true;
+            clearTimeout(fallbackTimer);
+            refreshFromModel(apiData);
+            updateDataSourceBadge(apiData.meta?.trafficSource || 'simulation');
+        }
+    });
+
+    // ── MODEL INTEGRATION ──────────────────────────────────────────────────
+
+    /**
+     * Re-runs the risk model and pushes results to the dashboard UI.
+     * Accepts optional apiData from the live API to override engine output.
+     */
+    function refreshFromModel(apiData) {
+        // Use API data if provided, otherwise fall back to local engine
+        const result     = apiData || RiskEngine.compute();
+        const zoneScores = apiData?.zoneScores || RiskEngine.computeZoneScores();
+        const engineState = RiskEngine.getState();
+
+        // Prefer API meta if available
+        const meta = apiData?.meta || {
+            officersOnDuty:    engineState.officersOnDuty,
+            activeIncidents:   engineState.incidents.filter(i => i.status !== 'Resolved').length,
+            criticalIncidents: engineState.incidents.filter(i => i.severity === 'Critical' && i.status !== 'Resolved').length,
+            unmannedZones:     engineState.unmannedZones
+        };
+
+        state.metrics.riskScore         = result.score;
+        state.metrics.activeIncidents   = meta.activeIncidents;
+        state.metrics.criticalIncidents = meta.criticalIncidents;
+        state.metrics.officersOnDuty    = meta.officersOnDuty;
+        state.metrics.unmannedRisks     = meta.unmannedZones;
+
+        // Build map markers from zone risk scores
+        state.markers = zoneScores.map((z, idx) => ({
+            id: idx + 1,
+            label: z.zone,
+            type: z.label.text.toLowerCase(),
+            lat:  z.lat || 21.1458,
+            lng:  z.lng || 79.0882,
+            desc: buildZoneDescription(z, engineState.incidents),
+            icon: ZONE_ICONS[z.label.text] || 'location_on',
+            score: z.score,
+            badgeClass: z.label.badgeClass
+        }));
+
+        updateDashboardStats(result);
+        renderMarkers();
+        renderCorridors(apiData);
+        renderRiskFactorBar(result);
+    }
+
+    /**
+     * Builds a human-readable description for a zone marker tooltip.
+     */
+    function buildZoneDescription(zone, incidents) {
+        const zoneInc = incidents.filter(i =>
+            i.location?.toLowerCase().includes(zone.zone.toLowerCase()) &&
+            i.status !== 'Resolved'
+        );
+        if (zoneInc.length > 0) {
+            const types = [...new Set(zoneInc.map(i => i.severity))].join(' / ');
+            return `${zoneInc.length} active incident(s) — ${types}. Risk score: ${zone.score}`;
+        }
+        return `Historical hotspot. Current risk score: ${zone.score}/100`;
+    }
+
+    /**
+     * Renders a compact risk factor breakdown bar in the Command Actions card.
+     * If the breakdown element doesn't exist, creates it.
+     */
+    function renderRiskFactorBar(result) {
+        const card = document.querySelector('.card');
+        if (!card) return;
+
+        let breakdownEl = document.getElementById('risk-factor-breakdown');
+        if (!breakdownEl) {
+            breakdownEl = document.createElement('div');
+            breakdownEl.id = 'risk-factor-breakdown';
+            breakdownEl.style.cssText = `
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid var(--color-outline-variant);
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            `;
+            card.appendChild(breakdownEl);
+        }
+
+        const factorLabels = {
+            timeOfDay:       'Time of Day',
+            incidents:       'Live Incidents',
+            deployment:      'Deployment Gap',
+            trafficVelocity: 'Traffic Velocity',
+            historicalZone:  'Zone History'
+        };
+
+        breakdownEl.innerHTML = `
+            <div style="font-size: 11px; font-weight: 700; color: var(--color-on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+                Risk Score Breakdown — ${result.score}/100
+            </div>
+            ${Object.entries(result.factors).map(([key, val]) => `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 11px; color: var(--color-on-surface-variant); width: 110px; flex-shrink: 0;">${factorLabels[key]}</span>
+                    <div style="flex: 1; background: var(--color-surface-container); border-radius: var(--rounded-full); height: 6px; overflow: hidden;">
+                        <div style="
+                            height: 100%;
+                            width: ${val}%;
+                            background: ${val >= 75 ? 'var(--color-error)' : val >= 50 ? 'var(--color-on-tertiary-container)' : 'var(--color-primary)'};
+                            border-radius: var(--rounded-full);
+                            transition: width 0.6s ease;
+                        "></div>
+                    </div>
+                    <span style="font-size: 11px; font-weight: 700; color: var(--color-on-surface); width: 28px; text-align: right;">${Math.round(val)}</span>
+                </div>
+            `).join('')}
+        `;
+    }
+
+    // Render Markers on Map (driven by RiskEngine zone scores)
     function renderMarkers() {
-        // Clear existing markers except background styles
-        const existingPins = mapViewport.querySelectorAll('.map-marker, .marker-tooltip');
-        existingPins.forEach(pin => pin.remove());
+        markersGroup.clearLayers();
+        heatmapGroup.clearLayers();
 
         state.markers.forEach(marker => {
-            if (marker.type === 'normal' && !state.unitsActive) return;
+            let color   = '#64748b';  // slate for guarded
+            let isPulse = false;
+            let size    = 16;
 
-            // Pin marker
-            const pin = document.createElement('div');
-            pin.className = `map-marker`;
-            pin.style.top = marker.top;
-            pin.style.left = marker.left;
-
-            // Design color schemes based on risk profiles
             if (marker.type === 'critical') {
-                pin.style.backgroundColor = 'var(--color-error)';
-                pin.classList.add('marker-pulse');
+                color = '#dc2626'; isPulse = true; size = 32;
             } else if (marker.type === 'elevated') {
-                pin.style.backgroundColor = 'var(--color-on-tertiary-container)';
-            } else {
-                pin.style.backgroundColor = 'var(--color-primary)';
+                color = '#ea580c'; size = 26;
+            } else if (marker.type === 'watch') {
+                color = '#d97706'; size = 22;
+            } else if (marker.type === 'clear') {
+                color = '#16a34a'; size = 16;
             }
 
-            // Material Icon setup
-            const iconSpan = document.createElement('span');
-            iconSpan.className = 'material-symbols-outlined';
-            iconSpan.style.fontSize = marker.type === 'normal' ? '12px' : '16px';
-            iconSpan.textContent = marker.icon || 'location_on';
-            pin.appendChild(iconSpan);
+            const scoreLabel = `<span style="font-size:9px;font-weight:900;color:white;line-height:1;">${marker.score}</span>`;
+            const iconHtml = `
+                <div class="map-marker ${isPulse ? 'marker-pulse' : ''}" style="
+                    background: ${color};
+                    width: ${size}px; height: ${size}px;
+                    border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                    border: 2.5px solid rgba(255,255,255,0.9);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.35), 0 0 0 3px ${color}33;
+                    flex-direction: column; gap: 0;
+                ">
+                    <span class="material-symbols-outlined" style="font-size:${Math.round(size * 0.45)}px;color:white;line-height:1;">${marker.icon || 'location_on'}</span>
+                    ${size >= 22 ? scoreLabel : ''}
+                </div>`;
 
-            // Tooltip card overlay
-            const tooltip = document.createElement('div');
-            tooltip.className = 'card marker-tooltip';
-            tooltip.style.position = 'absolute';
-            tooltip.style.display = 'none';
-            tooltip.style.zIndex = '400';
-            tooltip.style.top = `calc(${marker.top} + 28px)`;
-            tooltip.style.left = `calc(${marker.left} - 60px)`;
-            tooltip.style.width = '200px';
-            tooltip.style.padding = '8px 12px';
-            tooltip.innerHTML = `
-                <div style="font-weight: 700; font-size: 12px; margin-bottom: 4px; color: var(--color-on-surface);">${marker.label}</div>
-                <div style="font-size: 11px; color: var(--color-on-surface-variant); line-height: 1.3;">${marker.desc}</div>
-            `;
-
-            // Hover interactions
-            pin.addEventListener('mouseenter', () => {
-                tooltip.style.display = 'block';
-                pin.style.transform = 'scale(1.25)';
+            const customIcon = L.divIcon({
+                className: 'custom-leaflet-marker',
+                html: iconHtml,
+                iconSize:   [size, size],
+                iconAnchor: [size / 2, size / 2]
             });
 
-            pin.addEventListener('mouseleave', () => {
-                tooltip.style.display = 'none';
-                pin.style.transform = 'scale(1)';
-            });
+            // Build officers on duty line
+            const officerLine = marker.officers !== undefined
+                ? `<div style="margin-top:4px; font-size:10px; color:var(--color-on-surface-variant); display:flex; align-items:center; gap:4px;">
+                       <span class="material-symbols-outlined" style="font-size:12px;">local_police</span>
+                       ${marker.officers} officer${marker.officers !== 1 ? 's' : ''} assigned
+                   </div>` : '';
 
-            mapViewport.appendChild(pin);
-            mapViewport.appendChild(tooltip);
+            const popupContent = `
+                <div style="width:230px; font-family:Inter,sans-serif;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
+                        <span style="font-weight:700; font-size:13px;">${marker.label}</span>
+                        <span style="background:${color}; color:white; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;">Risk ${marker.score}</span>
+                    </div>
+                    <div style="font-size:11px; line-height:1.5; color:#475569;">${marker.desc}</div>
+                    ${officerLine}
+                </div>`;
+
+            L.marker([marker.lat, marker.lng], { icon: customIcon })
+                .bindPopup(popupContent, { maxWidth: 260 })
+                .addTo(markersGroup);
+
+            // Also add a heatmap circle for this zone (hidden by default)
+            L.circle([marker.lat, marker.lng], {
+                radius: 500,
+                color:  color,
+                fillColor: color,
+                fillOpacity: 0.18,
+                weight: 1,
+                opacity: 0.4
+            }).addTo(heatmapGroup);
         });
     }
 
+    /**
+     * Fetches live traffic corridor data from the backend /api/traffic endpoint
+     * and draws colored polylines on the map.
+     * This runs independently from refreshFromModel() so corridors are ALWAYS drawn.
+     */
+    async function fetchAndRenderCorridors() {
+        const CORRIDOR_COORDS = {
+            'Zero Mile to Sitabuldi':   [[21.1458,79.0882], [21.1480,79.0860], [21.1508,79.0826]],
+            'Wardha Road':              [[21.1102,79.0726], [21.1200,79.0760], [21.1300,79.0800]],
+            'Kamptee Road':             [[21.1600,79.1100], [21.1540,79.1010], [21.1458,79.0882]],
+            'Sadar to Variety Square':  [[21.1490,79.0950], [21.1505,79.0910], [21.1520,79.0870]],
+            'Jhansi Rani to Sitabuldi':  [[21.1380,79.0760], [21.1440,79.0790], [21.1508,79.0826]]
+        };
+
+        try {
+            const res  = await fetch(`${PRAVAH_API}/api/traffic`, { signal: AbortSignal.timeout(5000) });
+            if (!res.ok) throw new Error(`Traffic API ${res.status}`);
+            const data = await res.json();
+            const corridors = data.corridors || [];
+
+            corridorsGroup.clearLayers();
+
+            corridors.forEach(c => {
+                const points = CORRIDOR_COORDS[c.corridor];
+                if (!points) return;
+
+                const congPct = c.congestion || 0;
+                const color   = congPct >= 50 ? '#dc2626' : congPct >= 20 ? '#d97706' : '#16a34a';
+                const weight  = congPct >= 50 ? 7 : congPct >= 20 ? 6 : 5;
+
+                L.polyline(points, {
+                    color, weight, opacity: 0.85,
+                    lineCap: 'round', lineJoin: 'round'
+                })
+                .bindTooltip(
+                    `<strong>${c.corridor}</strong><br>` +
+                    `🚗 Speed: <b>${c.speedKmh} km/h</b><br>` +
+                    `🔴 Congestion: <b>${congPct}%</b>`,
+                    { sticky: true, className: 'corridor-tooltip' }
+                )
+                .addTo(corridorsGroup);
+            });
+
+            console.log(`[PravahAI] Corridors rendered: ${corridors.length} roads`);
+        } catch (err) {
+            console.warn('[PravahAI] Traffic API unreachable for corridors:', err.message);
+            // Draw placeholder grey corridors so map isn't blank
+            corridorsGroup.clearLayers();
+            Object.entries(CORRIDOR_COORDS).forEach(([name, points]) => {
+                L.polyline(points, { color: '#94a3b8', weight: 4, opacity: 0.5 })
+                 .bindTooltip(`<strong>${name}</strong><br>Traffic data unavailable`, { sticky: true })
+                 .addTo(corridorsGroup);
+            });
+        }
+    }
+
+    // Legacy renderCorridors kept for compatibility (no-op now — fetchAndRenderCorridors() handles it)
+    function renderCorridors() {}
+
     // Controls setup
     function initControls() {
-        // Toggle Heatmap Layer
+        // Toggle Heatmap Layer (real Leaflet circle overlay per zone)
         if (toggleHeatmap) {
             toggleHeatmap.addEventListener('click', () => {
                 state.heatmapActive = !state.heatmapActive;
                 toggleHeatmap.classList.toggle('active', state.heatmapActive);
-                
+                toggleHeatmap.style.backgroundColor = state.heatmapActive ? 'var(--color-surface-container-highest)' : '';
+
                 if (state.heatmapActive) {
-                    mapViewport.style.boxShadow = 'inset 0 0 100px rgba(186, 26, 26, 0.2)';
-                    toggleHeatmap.style.backgroundColor = 'var(--color-surface-container-highest)';
-                    window.dispatchSystemAlert('Map Layer updated', 'Heatmap overlay turned ON', 'info');
+                    heatmapGroup.addTo(map);
+                    window.dispatchSystemAlert('Map Layer', 'Zone risk heatmap overlay ON', 'info');
                 } else {
-                    mapViewport.style.boxShadow = 'none';
-                    toggleHeatmap.style.backgroundColor = '';
-                    window.dispatchSystemAlert('Map Layer updated', 'Heatmap overlay turned OFF', 'info');
+                    map.removeLayer(heatmapGroup);
+                    window.dispatchSystemAlert('Map Layer', 'Zone risk heatmap overlay OFF', 'info');
                 }
             });
         }
 
-        // Toggle Units Layer
+        // Toggle Units Layer (show/hide guarded and clear zones)
         if (toggleUnits) {
             toggleUnits.addEventListener('click', () => {
                 state.unitsActive = !state.unitsActive;
                 toggleUnits.classList.toggle('active', state.unitsActive);
                 toggleUnits.style.backgroundColor = state.unitsActive ? 'var(--color-surface-container-highest)' : '';
                 renderMarkers();
-                window.dispatchSystemAlert('Map Layer updated', `Patrol units display ${state.unitsActive ? 'enabled' : 'hidden'}`, 'info');
+                window.dispatchSystemAlert('Map Layer', `Patrol unit markers ${state.unitsActive ? 'shown' : 'hidden (watch+ only)'}`, 'info');
             });
         }
 
         // Recenter Map
         if (btnRecenter) {
             btnRecenter.addEventListener('click', () => {
-                mapViewport.style.transform = 'scale(1.05)';
-                setTimeout(() => {
-                    mapViewport.style.transform = 'scale(1)';
-                }, 200);
-                window.dispatchSystemAlert('Map Viewport reset', 'Recentered view on Nagpur Zero Mile Marker', 'info');
+                map.flyTo([21.1458, 79.0882], 13, { duration: 1.2 });
+                window.dispatchSystemAlert('Map', 'Recentered on Nagpur Zero Mile', 'info');
             });
         }
 
         // Simulate incident logic
         if (btnSimulate) {
-            btnSimulate.addEventListener('click', () => {
-                simulateRandomIncident();
-            });
+            btnSimulate.addEventListener('click', simulateRandomIncident);
         }
 
         // Broadcast Alert dialog logic
         if (btnBroadcast) {
             btnBroadcast.addEventListener('click', () => {
                 const alertMsg = prompt('Enter emergency text to broadcast city-wide:');
-                if (alertMsg && alertMsg.trim() !== '') {
-                    broadcastMessage(alertMsg.trim());
-                }
+                if (alertMsg && alertMsg.trim() !== '') broadcastMessage(alertMsg.trim());
             });
         }
 
-        // Emergency Override Logic
+        // Emergency Override Logic (fixed: use innerHTML not textContent to preserve icon)
         if (btnEmergency) {
+            let overrideActive = false;
             btnEmergency.addEventListener('click', () => {
-                const confirmed = confirm('CRITICAL WARNING: Are you sure you want to trigger manual emergency override? All intersections will switch to flashing yellow.');
+                if (overrideActive) {
+                    // Second click cancels override
+                    overrideActive = false;
+                    btnEmergency.innerHTML = '<span class="material-symbols-outlined">warning</span> Emergency Override';
+                    btnEmergency.style.backgroundColor = '';
+                    window.dispatchSystemAlert('Override Cancelled', 'Traffic systems restored to normal control.', 'info');
+                    return;
+                }
+                const confirmed = confirm('CRITICAL: Trigger manual emergency override? All intersections switch to flashing yellow mode.');
                 if (confirmed) {
-                    window.dispatchSystemAlert('Emergency Override Active', 'Manual override broadcasted. All traffic systems shifted to caution state.', 'critical');
-                    btnEmergency.textContent = 'SYSTEM OVERRIDDEN';
-                    btnEmergency.style.backgroundColor = 'var(--color-on-error-container)';
-                    
-                    // Increment Unmanned High-Risk since units are deployed in emergency mode
-                    state.metrics.unmannedRisks += 2;
-                    updateDashboardStats();
+                    overrideActive = true;
+                    btnEmergency.innerHTML = '<span class="material-symbols-outlined">emergency</span> OVERRIDE ACTIVE';
+                    btnEmergency.style.backgroundColor = '#7f1d1d';
+                    btnEmergency.style.animation = 'pulse-ring 1.5s infinite';
+                    window.dispatchSystemAlert('🚨 Emergency Override Active', 'All traffic systems shifted to manual caution state. Click again to cancel.', 'critical');
+                    appendFeedItem('Command Override', 'Manual emergency override activated. All intersections — flashing yellow mode.', '🚨 OVERRIDE', 'critical');
+
+                    const s = RiskEngine.getState();
+                    RiskEngine.updateState({ unmannedZones: Math.min(8, s.unmannedZones + 2) });
+                    refreshFromModel();
                 }
             });
         }
     }
 
-    // Dynamic Incident Simulator
+    // Dynamic Incident Simulator — pushes into RiskEngine and re-scores
     function simulateRandomIncident() {
         const locations = [
-            { label: 'Kamptee Road Intersection', top: '22%', left: '50%', desc: 'Aggressive congestion pattern detected. Traffic speed drop > 50%.' },
-            { label: 'Wardha Road Interchange', top: '75%', left: '42%', desc: 'Vehicle breakdown stalling left lane. Squad dispatch required.' },
-            { label: 'Jhansi Rani Square', top: '50%', left: '30%', desc: 'Demonstration group blocking access points near Metro link.' },
-            { label: 'Sadar Bazar Junction', top: '15%', left: '35%', desc: 'Signal controller communication breakdown. Manual dispatch suggested.' }
+            { label: 'Kamptee Road',             desc: 'Aggressive congestion pattern detected. Traffic speed drop > 50%.' },
+            { label: 'Wardha Road Interchange',  desc: 'Vehicle breakdown stalling left lane. Squad dispatch required.' },
+            { label: 'Jhansi Rani Square',       desc: 'Demonstration group blocking access points near Metro link.' },
+            { label: 'Sadar Bazar Junction',     desc: 'Signal controller communication breakdown. Manual dispatch suggested.' }
         ];
 
         const randomLoc = locations[Math.floor(Math.random() * locations.length)];
-        
-        // Add marker to list
-        const newIncident = {
-            id: Date.now(),
-            label: randomLoc.label,
-            type: 'critical',
-            top: randomLoc.top,
-            left: randomLoc.left,
-            desc: randomLoc.desc,
-            icon: 'report'
-        };
 
-        state.markers.push(newIncident);
-        renderMarkers();
+        // Inject new incident into the engine's state
+        const engineState = RiskEngine.getState();
+        engineState.incidents.push({
+            severity: 'Critical',
+            status: 'Logged',
+            location: randomLoc.label
+        });
+        RiskEngine.updateState({ incidents: engineState.incidents });
 
-        // Increment incident metrics
-        state.metrics.activeIncidents++;
-        state.metrics.criticalIncidents++;
-        state.metrics.riskScore = Math.min(100, state.metrics.riskScore + 3);
-        updateDashboardStats();
+        // Increment unmanned zones (unit deployed = one less covered zone)
+        RiskEngine.updateState({ unmannedZones: Math.min(8, engineState.unmannedZones + 1) });
 
-        // Append to Comm Feed at the very top
+        // Re-run model
+        refreshFromModel();
+
+        // Append to Comm Feed
         appendFeedItem(randomLoc.label, randomLoc.desc, 'High Risk', 'critical');
-
-        // Broadcast Audio feedback
         window.dispatchSystemAlert('Traffic Alert', `${randomLoc.label}: ${randomLoc.desc}`, 'critical');
     }
 
@@ -252,34 +593,113 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Broadcast a custom manual alert message
     function broadcastMessage(message) {
-        // Add to Feed list
         appendFeedItem('Command Broadcast', message, 'Broadcast', 'elevated');
-
-        // Stats update
-        state.metrics.riskScore = Math.max(0, state.metrics.riskScore - 1); // Broadcast helps mitigate risk
-        updateDashboardStats();
-
-        window.dispatchSystemAlert('Broadcast Broadcasted', `Alert sent: ${message}`, 'elevated');
+        const s = RiskEngine.getState();
+        RiskEngine.updateState({ avgTrafficVelocity: Math.min(s.freeFlowVelocity, s.avgTrafficVelocity + 2) });
+        refreshFromModel();
+        window.dispatchSystemAlert('Broadcast Sent', `Alert sent: ${message}`, 'elevated');
     }
 
-    // Update the UI metrics cards dynamically
-    function updateDashboardStats() {
-        const riskScoreLabel = document.querySelector('.kpi-card:nth-child(1) .kpi-value-container span');
-        const activeIncidentsLabel = document.querySelector('.kpi-card:nth-child(2) .kpi-value-container span');
-        const activeIncidentsBadge = document.querySelector('.kpi-card:nth-child(2) .kpi-value-container .badge');
-        const unmannedLabel = document.querySelector('.kpi-card:nth-child(4) .kpi-value-container span');
+    /**
+     * Load real incidents from the DB API and populate the Comm Feed.
+     * Replaces the static HTML placeholder items in index.html.
+     */
+    async function loadCommFeedFromAPI() {
+        if (!commFeedList) return;
+        try {
+            const res  = await fetch(`${PRAVAH_API}/api/incidents?hours=24`, { signal: AbortSignal.timeout(4000) });
+            if (!res.ok) throw new Error(`API ${res.status}`);
+            const data = await res.json();
+            const incidents = (data.incidents || []).slice(0, 8); // show latest 8
 
-        if (riskScoreLabel) {
-            riskScoreLabel.innerHTML = `${state.metrics.riskScore}<span class="text-headline-md" style="color: var(--color-outline);">/100</span>`;
+            if (!incidents.length) return; // keep static items if no DB incidents
+
+            // Clear static HTML placeholders
+            commFeedList.innerHTML = '';
+
+            incidents.forEach(inc => {
+                const level = inc.severity === 'Critical' ? 'critical'
+                            : inc.severity === 'Warning'  ? 'elevated' : 'system';
+                const time  = new Date(inc.reported_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+                const item = document.createElement('div');
+                item.className = `comm-feed-item ${level === 'critical' ? 'risk-high' : level === 'elevated' ? 'risk-elevated' : 'risk-system'}`;
+                item.innerHTML = `
+                    <div class="comm-feed-item-header">
+                        <div class="comm-feed-meta">
+                            <span class="badge ${level === 'critical' ? 'badge-critical' : level === 'elevated' ? 'badge-elevated' : 'badge-system'}">${inc.category}</span>
+                            <span class="comm-feed-time">${time}</span>
+                        </div>
+                        <span class="badge ${inc.status === 'Resolved' ? 'badge-success' : inc.status === 'Dispatched' ? 'badge-elevated' : 'badge-system'}" style="font-size:9px; padding:1px 5px;">${inc.status}</span>
+                    </div>
+                    <p class="text-body-md comm-feed-desc" style="font-weight: 500;">${inc.description || inc.category + ' at ' + inc.location}</p>
+                    <div class="comm-feed-details text-data-tabular">
+                        <span class="material-symbols-outlined" style="font-size: 14px;">location_on</span>
+                        ${inc.location} &nbsp;·&nbsp; ${inc.incident_id}
+                    </div>`;
+                commFeedList.appendChild(item);
+            });
+        } catch (err) {
+            console.warn('[PravahAI] Comm feed API unavailable — keeping static items.', err.message);
         }
-        if (activeIncidentsLabel) {
-            activeIncidentsLabel.textContent = state.metrics.activeIncidents;
+    }
+
+    /**
+     * Updates the data source badge on the map toolbar.
+     * Shows 🟢 TomTom Live or 🟡 Simulation.
+     */
+    function updateDataSourceBadge(source) {
+        const badge = document.getElementById('data-source-badge');
+        if (!badge) return;
+        const isLive = source === 'tomtom';
+        badge.textContent = isLive ? '🟢 TomTom Live' : '🟡 Simulation';
+        badge.style.color = isLive ? '#16a34a' : '#d97706';
+        badge.title = isLive
+            ? 'Traffic data is live from TomTom Routing API'
+            : 'Traffic data is time-based simulation (TomTom unavailable)';
+    }
+
+    // Update the UI metrics cards from model result
+    function updateDashboardStats(result) {
+        const r = result || RiskEngine.compute();
+        const riskScoreEl   = document.querySelector('.kpi-card:nth-child(1) .kpi-value');
+        const riskBadgeEl   = document.querySelector('.kpi-card:nth-child(1) .badge');
+        const incCountEl    = document.querySelector('.kpi-card:nth-child(2) .kpi-value');
+        const incBadgeEl    = document.querySelector('.kpi-card:nth-child(2) .badge');
+        const officersEl    = document.querySelector('.kpi-card:nth-child(3) .kpi-value');
+        const officersBadge = document.querySelector('.kpi-card:nth-child(3) .badge, .kpi-card:nth-child(3) .text-body-md');
+        const unmannedEl    = document.querySelector('.kpi-card:nth-child(4) .kpi-value');
+        const unmannedBadge = document.querySelector('.kpi-card:nth-child(4) .text-data-tabular');
+
+        if (riskScoreEl) {
+            riskScoreEl.innerHTML = `${r.score}<span class="text-headline-md" style="color: var(--color-outline);">/100</span>`;
         }
-        if (activeIncidentsBadge) {
-            activeIncidentsBadge.textContent = `${state.metrics.criticalIncidents} Critical`;
+        if (riskBadgeEl) {
+            riskBadgeEl.className = `badge ${r.label.badgeClass}`;
+            riskBadgeEl.innerHTML = `<span class="material-symbols-outlined" style="font-size:14px;">${r.trend.icon}</span> ${r.trend.delta > 0 ? '+' : ''}${r.trend.delta}`;
         }
-        if (unmannedLabel) {
-            unmannedLabel.textContent = state.metrics.unmannedRisks;
+        if (incCountEl)  incCountEl.textContent = state.metrics.activeIncidents;
+        if (incBadgeEl)  incBadgeEl.textContent  = `${state.metrics.criticalIncidents} Critical`;
+
+        // Officers KPI (card 3)
+        if (officersEl) {
+            const duty  = state.metrics.officersOnDuty;
+            const total = RiskEngine.getState().totalOfficers || duty;
+            officersEl.innerHTML = `${duty}<span class="text-headline-md" style="color:var(--color-outline);">/${total}</span>`;
+        }
+        if (officersBadge) {
+            const duty  = state.metrics.officersOnDuty;
+            const total = RiskEngine.getState().totalOfficers || duty;
+            const pct   = total > 0 ? Math.round((duty / total) * 100) : 0;
+            officersBadge.textContent = `${pct}% Deployment`;
+            officersBadge.className = 'text-body-md';
+            officersBadge.style.cssText = `color: var(--color-on-surface-variant); font-weight: 500;`;
+        }
+
+        // Unmanned zones (card 4)
+        if (unmannedEl)  unmannedEl.textContent = state.metrics.unmannedRisks;
+        if (unmannedBadge && state.metrics.unmannedRisks > 0) {
+            unmannedBadge.innerHTML = `<span style="display:inline-block;width:8px;height:8px;background:var(--color-error);border-radius:50%;animation:pulse-ring 2s infinite;"></span> Action Req.`;
         }
     }
 });

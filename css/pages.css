@@ -72,10 +72,44 @@
     background-size: cover;
     background-position: center;
     transition: filter 0.25s ease;
+    border-radius: inherit;
+}
+
+/* Tech Grid Overlay */
+.map-viewport::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(70, 95, 136, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(70, 95, 136, 0.08) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+[data-theme="dark"] .map-viewport::before {
+    background-image: 
+        linear-gradient(rgba(56, 189, 248, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.1) 1px, transparent 1px);
+}
+
+/* Radial Vignette Overlay */
+.map-viewport::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, transparent 40%, rgba(11, 28, 48, 0.25) 100%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+[data-theme="dark"] .map-viewport::after {
+    background: radial-gradient(circle, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
 }
 
 [data-theme="dark"] .map-viewport {
-    filter: brightness(0.6) contrast(1.1) saturate(0.8);
+    filter: brightness(0.65) contrast(1.15) saturate(0.85);
 }
 
 /* Comm Feed / Live feed */
@@ -400,4 +434,32 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
+}
+
+/* Leaflet Integration Tweaks */
+.leaflet-container {
+    background-color: var(--color-surface-variant) !important;
+    font-family: Inter, sans-serif !important;
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+    background-color: var(--color-surface-container-lowest) !important;
+    color: var(--color-on-surface) !important;
+    border: 1px solid var(--color-outline-variant) !important;
+    border-radius: var(--rounded-lg) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-popup-content {
+    margin: 0 !important;
+}
+
+.leaflet-tooltip {
+    background-color: var(--color-surface-container-highest) !important;
+    color: var(--color-on-surface) !important;
+    border: 1px solid var(--color-outline) !important;
+    border-radius: var(--rounded-sm) !important;
+    font-size: 11px !important;
+    font-family: Inter, sans-serif !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
 }

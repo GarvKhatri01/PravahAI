@@ -9,6 +9,9 @@
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <!-- Leaflet.js maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Modular CSS -->
     <link href="css/style.css" rel="stylesheet"/>
     <link href="css/components.css" rel="stylesheet"/>
@@ -59,6 +62,10 @@
                         <span class="material-symbols-outlined" style="font-size: 18px;">help</span>
                         <span>Support</span>
                     </a>
+                    <div style="padding: 8px 12px; font-size: 10px; color: var(--color-outline); display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="font-size: 12px;">sensors</span>
+                        <span id="api-status">Connecting...</span>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -142,8 +149,8 @@
                                 <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-secondary);">local_police</span>
                             </div>
                             <div class="kpi-value-container">
-                                <span class="text-display-lg kpi-value">145</span>
-                                <span class="text-body-md" style="color: var(--color-on-surface-variant); font-weight: 500;">92% Deployment</span>
+                                <span class="text-display-lg kpi-value">—<span class="text-headline-md" style="color: var(--color-outline);"></span></span>
+                                <span class="badge badge-system" style="font-size:11px;">Syncing...</span>
                             </div>
                         </div>
 
@@ -154,9 +161,9 @@
                                 <span class="material-symbols-outlined" style="font-size: 18px; color: var(--color-outline);">location_off</span>
                             </div>
                             <div class="kpi-value-container">
-                                <span class="text-display-lg kpi-value">4</span>
+                                <span class="text-display-lg kpi-value">—</span>
                                 <span class="text-data-tabular" style="color: var(--color-error); font-weight: 700; display: flex; align-items: center; gap: 4px;">
-                                    <span style="display:inline-block; width:8px; height:8px; background-color:var(--color-error); border-radius:50%; animation: pulse-ring 2s infinite;"></span> Action Req.
+                                    <span style="display:inline-block; width:8px; height:8px; background-color:var(--color-error); border-radius:50%; animation: pulse-ring 2s infinite;"></span> Syncing...
                                 </span>
                             </div>
                         </div>
@@ -180,6 +187,10 @@
                                     </button>
                                 </div>
                                 
+                                <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                                    <span id="data-source-badge" title="Traffic data source" style="font-size: 10px; font-weight: 700; cursor: default; padding: 2px 6px; border-radius: 8px; background: var(--color-surface-container); color: var(--color-outline);">⏳ Connecting...</span>
+                                </div>
+                                
                                 <div class="map-legend">
                                     <div class="legend-item">
                                         <div class="legend-color" style="background-color: var(--color-error);"></div>
@@ -197,8 +208,8 @@
                             </div>
 
                             <!-- Cartographic Layer Grid -->
-                            <div class="map-viewport" id="map-viewport" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBs3I-rBfunGeTb-ZPSvdRuaWh4QgVGqaT2ZJudAK7-DLxxGZs1NODMtdH3ZNTESAqAe3hOUJl75Fwe88HEnZRQRdp_UrVN6TLHsGIy-wfXPWRqGNfvn26jUl8-2lJAayGcoV-FX68H9RqwQK3h2y6lbCkBK5aBKrag5HxwyKsNvN17SjZKS-MVKKggq0Qwg6zjR-Wsi5UqN5gfIA46hHXT_GQAI_g598vxnXpSiLl4SFGgyhc_OVwXEw');">
-                                <!-- Marker nodes populated dynamically via dashboard.js -->
+                            <div class="map-viewport" id="map-viewport">
+                                <!-- Marker nodes populated dynamically via Leaflet -->
                             </div>
                         </section>
 
@@ -227,56 +238,10 @@
                                 </div>
                                 
                                 <div class="comm-feed-list" id="comm-feed-list">
-                                    <!-- Logged items -->
-                                    <div class="comm-feed-item risk-high">
-                                        <div class="comm-feed-item-header">
-                                            <div class="comm-feed-meta">
-                                                <span class="badge badge-critical">High Risk</span>
-                                                <span class="comm-feed-time">Just now</span>
-                                            </div>
-                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" style="font-size: 16px;">more_vert</span></button>
-                                        </div>
-                                        <p class="text-body-md comm-feed-desc" style="font-weight: 500;">High Risk congestion pattern detected at <strong>Zero Mile Stone</strong>.</p>
-                                        <div class="comm-feed-details text-data-tabular">
-                                            <span class="material-symbols-outlined" style="font-size: 14px;">speed</span>
-                                            Velocity drop &gt; 40%
-                                        </div>
-                                    </div>
-
-                                    <div class="comm-feed-item risk-elevated">
-                                        <div class="comm-feed-item-header">
-                                            <div class="comm-feed-meta">
-                                                <span class="badge badge-elevated">Accident</span>
-                                                <span class="comm-feed-time">4 min ago</span>
-                                            </div>
-                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" style="font-size: 16px;">more_vert</span></button>
-                                        </div>
-                                        <p class="text-body-md comm-feed-desc" style="font-weight: 500;">Accident reported near <strong>Variety Square</strong>. Eastbound lanes partially blocked.</p>
-                                        <div class="comm-feed-details text-data-tabular">
-                                            <span class="material-symbols-outlined" style="font-size: 14px;">directions_car</span>
-                                            Unit 42 dispatched
-                                        </div>
-                                    </div>
-
-                                    <div class="comm-feed-item risk-system">
-                                        <div class="comm-feed-item-header">
-                                            <div class="comm-feed-meta">
-                                                <span class="badge badge-system">System</span>
-                                                <span class="comm-feed-time">12 min ago</span>
-                                            </div>
-                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" style="font-size: 16px;">more_vert</span></button>
-                                        </div>
-                                        <p class="text-body-md comm-feed-desc" style="font-weight: 500;">Shift change initiated. Sector B deployment updated successfully.</p>
-                                    </div>
-
-                                    <div class="comm-feed-item" style="border-left-color: transparent;">
-                                        <div class="comm-feed-item-header">
-                                            <div class="comm-feed-meta">
-                                                <span class="comm-feed-time">28 min ago</span>
-                                            </div>
-                                            <button class="icon-btn" style="padding: 2px;"><span class="material-symbols-outlined" style="font-size: 16px;">more_vert</span></button>
-                                        </div>
-                                        <p class="text-body-md comm-feed-desc" style="color: var(--color-on-surface-variant);">Routine camera maintenance completed at Sitabuldi interchange.</p>
+                                    <!-- Populated dynamically from /api/incidents by dashboard.js -->
+                                    <div style="padding: 24px; text-align:center; color: var(--color-outline); font-size: 12px;">
+                                        <span class="material-symbols-outlined" style="font-size: 20px; display:block; margin-bottom:6px;">sensors</span>
+                                        Loading live incidents...
                                     </div>
                                 </div>
                             </div>
@@ -289,6 +254,7 @@
     </div>
 
     <!-- Scripts defer loading -->
+    <script src="js/riskEngine.js"></script>
     <script src="js/main.js"></script>
     <script src="js/dashboard.js"></script>
 </body>

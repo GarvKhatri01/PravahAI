@@ -397,6 +397,11 @@ textarea.form-control {
     z-index: 30;
 }
 
+[data-theme="dark"] .map-marker {
+    border-color: #0f172a;
+    box-shadow: 0 0 12px currentColor, 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
 /* Pulse animation utility */
 @keyframes marker-pulse {
     0% { transform: scale(0.8); opacity: 0.6; }
