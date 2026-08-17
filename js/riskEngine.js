@@ -253,14 +253,17 @@ const RiskEngine = (() => {
             incidents:       calcIncidentScore(s.incidents),
             deployment:      calcDeploymentScore(s.unmannedZones, s.totalHighRiskZones),
             trafficVelocity: calcVelocityScore(s.avgTrafficVelocity, s.freeFlowVelocity),
-            historicalZone:  calcHistoricalScore(s.activeZones)
+            historicalZone:  calcHistoricalScore(s.activeZones),
+            incidentOverride: calcIncidentOverrideScore()   // ← admin-confirmed incident adjustments
         };
 
-        const weighted = Object.keys(WEIGHTS).reduce((sum, key) => {
-            return sum + (factors[key] * WEIGHTS[key]);
+        // incidentOverride uses a 25% weight, reducing others proportionally
+        const OVERRIDE_WEIGHT = 0.25;
+        const scaled = Object.keys(WEIGHTS).reduce((sum, key) => {
+            return sum + (factors[key] * WEIGHTS[key] * (1 - OVERRIDE_WEIGHT));
         }, 0);
-
-        const score = Math.round(Math.min(100, Math.max(0, weighted)));
+        const overrideContrib = factors.incidentOverride * OVERRIDE_WEIGHT;
+        const score = Math.round(Math.min(100, Math.max(0, scaled + overrideContrib)));
 
         return {
             score,
@@ -271,6 +274,33 @@ const RiskEngine = (() => {
             timestamp: new Date().toISOString()
         };
     }
+
+    /**
+     * Reads 'pravah_risk_overrides' from localStorage (written by incidents.js)
+     * and returns an average index across all locations that have been acted on.
+     * Returns a value in [0, 100].
+     */
+    function calcIncidentOverrideScore() {
+        try {
+            const overrides = JSON.parse(localStorage.getItem('pravah_risk_overrides') || '{}');
+            const values = Object.values(overrides);
+            if (values.length === 0) return 0;
+            return Math.min(100, values.reduce((a, b) => a + b, 0) / values.length);
+        } catch(_) {
+            return 0;
+        }
+    }
+
+    // Re-compute score immediately when admin resolves/dispatches an incident
+    window.addEventListener('pravah_risk_override_updated', () => {
+        // Re-compute and broadcast so dashboard KPI card updates without a page reload
+        if (window.RiskEngine) {
+            const result = window.RiskEngine.compute();
+            window.__pravahRiskData = result;
+            window.dispatchEvent(new CustomEvent('riskDataUpdated', { detail: result }));
+        }
+    });
+
 
     // ── 5. RISK LABEL & TREND ─────────────────────────────────────────────────
 

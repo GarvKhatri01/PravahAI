@@ -41,7 +41,90 @@ document.addEventListener('DOMContentLoaded', () => {
             usingAPI = false; // silently fall back to local data
         }
         mergeOfficerReportedIncidents();
+        // Re-apply any status/severity changes made during this session
+        applyPersistedStates();
         renderIncidents();
+    }
+
+    // ── Persist incident state to localStorage ─────────────────────────────
+    // Key: pravah_incident_states  →  { [incident_id]: { status, severity } }
+    function persistState(incId, patch) {
+        try {
+            const map = JSON.parse(localStorage.getItem('pravah_incident_states') || '{}');
+            map[incId] = { ...(map[incId] || {}), ...patch };
+            localStorage.setItem('pravah_incident_states', JSON.stringify(map));
+        } catch(_) {}
+    }
+
+    // Restore persisted states onto the incidents array after (re)load
+    function applyPersistedStates() {
+        try {
+            const map = JSON.parse(localStorage.getItem('pravah_incident_states') || '{}');
+            incidents.forEach(inc => {
+                if (map[inc.incident_id]) {
+                    Object.assign(inc, map[inc.incident_id]);
+                }
+            });
+        } catch(_) {}
+    }
+
+    // ── Apply Risk Index change when an incident is acted on ───────────────
+    // Reads/writes 'pravah_risk_overrides': { [location]: currentIndex }
+    // riskEngine.js checks this key and factors it into the composite score.
+    function applyRiskIndexChange(inc, action) {
+        try {
+            // Map category names to risk-engine enum keys
+            const catMap = {
+                'Accident':          'ACCIDENT',
+                'Congestion':        'CONGESTION',
+                'Criminal Activity': 'CRIMINAL_ACTIVITY',
+                'Crowd Control':     'CROWD_CONTROL',
+                'Maintenance':       'MAINTENANCE',
+                'System':            'SYSTEM_VIP',
+            };
+            const sevMap = {
+                'Normal':   'NORMAL',
+                'Warning':  'WARNING',
+                'Critical': 'CRITICAL',
+            };
+
+            const overrides = JSON.parse(localStorage.getItem('pravah_risk_overrides') || '{}');
+            const currentIdx = overrides[inc.location] ?? 40;  // default baseline
+
+            if (action === 'Resolved') {
+                // Resolving reduces the index: subtract half the would-be impact, floor at 0
+                const catKey = catMap[inc.category];
+                const sevKey = sevMap[inc.severity];
+                if (catKey && sevKey) {
+                    const BASE_IMPACT = { MAINTENANCE: 5, CONGESTION: 7, CROWD_CONTROL: 10, SYSTEM_VIP: 12, ACCIDENT: 15, CRIMINAL_ACTIVITY: 15 };
+                    const MULT        = { NORMAL: 1.0, WARNING: 1.5, CRITICAL: 3.0 };
+                    const reduction   = Math.floor(BASE_IMPACT[catKey] * MULT[sevKey] * 0.5);
+                    overrides[inc.location] = Math.max(0, currentIdx - reduction);
+                }
+            } else if (action === 'Dispatched') {
+                // Dispatching slightly increases index — incident is active
+                const catKey = catMap[inc.category];
+                const sevKey = sevMap[inc.severity];
+                if (catKey && sevKey) {
+                    const BASE_IMPACT = { MAINTENANCE: 5, CONGESTION: 7, CROWD_CONTROL: 10, SYSTEM_VIP: 12, ACCIDENT: 15, CRIMINAL_ACTIVITY: 15 };
+                    const MULT        = { NORMAL: 1.0, WARNING: 1.5, CRITICAL: 3.0 };
+                    const raw         = Math.floor(BASE_IMPACT[catKey] * MULT[sevKey]);
+                    let   calculated  = Math.min(100, currentIdx + raw);
+                    if (sevKey === 'CRITICAL') calculated = Math.max(calculated, 75);
+                    overrides[inc.location] = Math.min(100, calculated);
+                }
+            } else if (action === 'Escalated') {
+                // Escalation to Critical spikes the index
+                overrides[inc.location] = Math.max(currentIdx, 75);
+            }
+
+            localStorage.setItem('pravah_risk_overrides', JSON.stringify(overrides));
+
+            // Signal riskEngine.js to re-compute immediately
+            window.dispatchEvent(new CustomEvent('pravah_risk_override_updated', {
+                detail: { location: inc.location, newIndex: overrides[inc.location] }
+            }));
+        } catch(_) {}
     }
 
     // ── Merge officer-portal incidents from localStorage ───────────────────
@@ -165,10 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── API actions ────────────────────────────────────────────────────────
     async function updateStatus(incId, status) {
-        // Optimistic local update
         const inc = incidents.find(i => i.incident_id === incId);
         if (!inc) return;
+
+        // Optimistic local update
         inc.status = status;
+
+        // ✅ Persist status so it survives page navigation
+        persistState(incId, { status });
+
+        // ✅ Update risk index for this location
+        applyRiskIndexChange(inc, status);
+
         renderIncidents();
 
         if (usingAPI) {
@@ -181,13 +272,25 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch { /* already updated locally */ }
         }
 
-        window.dispatchSystemAlert(`Incident ${status}`, `${incId} at ${inc.location} → ${status}`, status === 'Resolved' ? 'info' : 'elevated');
+        window.dispatchSystemAlert(
+            `Incident ${status}`,
+            `${incId} at ${inc.location} → ${status}`,
+            status === 'Resolved' ? 'info' : 'elevated'
+        );
     }
 
     async function escalate(incId) {
         const inc = incidents.find(i => i.incident_id === incId);
         if (!inc) return;
+
         inc.severity = 'Critical';
+
+        // ✅ Persist escalated severity
+        persistState(incId, { severity: 'Critical' });
+
+        // ✅ Spike risk index for this location
+        applyRiskIndexChange(inc, 'Escalated');
+
         renderIncidents();
 
         if (usingAPI) {
