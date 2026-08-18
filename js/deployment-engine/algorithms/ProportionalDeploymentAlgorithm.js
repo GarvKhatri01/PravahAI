@@ -40,8 +40,15 @@
 
 'use strict';
 
-const { IDeploymentEngine }                    = require('../IDeploymentEngine');
-const { SystemConstants, createDeploymentPlan } = require('../models');
+const _IDeploymentEngineModule = typeof require !== 'undefined'
+    ? require('../IDeploymentEngine')
+    : (typeof window !== 'undefined' ? window.PravahDeploymentEngine : {});
+const IDeploymentEngine = _IDeploymentEngineModule.IDeploymentEngine;
+
+const _modelsModule = typeof require !== 'undefined'
+    ? require('../models')
+    : (typeof window !== 'undefined' ? window.PravahDeploymentEngine : {});
+const { SystemConstants, createDeploymentPlan } = _modelsModule;
 
 class ProportionalDeploymentAlgorithm extends IDeploymentEngine {
 

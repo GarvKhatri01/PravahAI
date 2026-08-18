@@ -108,6 +108,228 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    /* ——————————————————————————————————————————————————
+       ⚡ REDEPLOY OFFICERS — Deployment Engine Integration
+       —————————————————————————————————————————————————— */
+    const btnRedeploy       = document.getElementById('btn-redeploy');
+    const redeployModal     = document.getElementById('redeploy-modal');
+    const redeployPlanBody  = document.getElementById('redeploy-plan-body');
+    const redeploySummary   = document.getElementById('redeploy-summary');
+    const closeRedeployBtn  = document.getElementById('close-redeploy-modal');
+    const cancelRedeployBtn = document.getElementById('cancel-redeploy-btn');
+    const confirmRedeployBtn= document.getElementById('confirm-redeploy-btn');
+
+    // Store computed plan until user confirms
+    let _pendingDeploymentPlan = null;
+    // Map postId → list of officers assigned there (for slot tracking)
+    // Used by the engine to model officer count per post
+    function buildAreaStates() {
+        // Group officers by their current postId
+        const postCounts = {};
+        officers.forEach(o => {
+            if (o.status !== 'Active') return;
+            const pid = o.postId || 'UNASSIGNED';
+            postCounts[pid] = (postCounts[pid] || 0) + 1;
+        });
+
+        // Build one AreaState per known POST_LOCATION
+        const { createAreaState } = window.PravahDeploymentEngine || {};
+        if (!createAreaState) {
+            console.warn('[Redeploy] PravahDeploymentEngine not loaded');
+            return [];
+        }
+
+        return Object.entries(POST_LOCATIONS).map(([locId, loc]) => {
+            const riskIndex  = Math.round(loc.riskScore);           // already 0-100
+            const currentOfficers = Math.max(2, postCounts[locId] || 2); // min baseline
+            return createAreaState(locId, riskIndex, currentOfficers);
+        });
+    }
+
+    function openRedeployModal() {
+        if (!window.PravahDeploymentEngine) {
+            alert('Deployment Engine not loaded. Please refresh the page.');
+            return;
+        }
+
+        const { PoliceDeploymentService } = window.PravahDeploymentEngine;
+        const svc    = new PoliceDeploymentService();
+        const states = buildAreaStates();
+
+        if (states.length === 0) {
+            alert('No active deployment posts found.');
+            return;
+        }
+
+        let plan;
+        try {
+            plan = svc.deploy(states);
+        } catch(err) {
+            alert('Deployment Engine error: ' + err.message);
+            return;
+        }
+
+        _pendingDeploymentPlan = plan;
+
+        // ── Render summary banner ──────────────────────────────────
+        const moving   = plan.filter(p => p.delta !== 0).length;
+        const gaining  = plan.filter(p => p.delta > 0).length;
+        const donating = plan.filter(p => p.delta < 0).length;
+        redeploySummary.innerHTML = `
+            <span>📍 <strong>${plan.length}</strong> Posts Evaluated</span>
+            <span>🔀 <strong>${moving}</strong> Posts Changing</span>
+            <span>⬆️ <strong>${gaining}</strong> Receiving Officers</span>
+            <span>⬇️ <strong>${donating}</strong> Donating Officers</span>
+        `;
+
+        // ── Render plan rows ───────────────────────────────────────
+        // Build reverse map: postId → officers currently there
+        const postOfficerMap = {};
+        officers.forEach(o => {
+            const pid = o.postId || 'UNASSIGNED';
+            if (!postOfficerMap[pid]) postOfficerMap[pid] = [];
+            postOfficerMap[pid].push(o);
+        });
+
+        // Compute target post for each officer based on plan
+        // Simple greedy: sort plans by delta desc (high receivers first),
+        // assign officers from donors to receivers
+        const postTarget = {};         // postId → newOfficerCount
+        plan.forEach(p => { postTarget[p.areaId] = p.newOfficerCount; });
+
+        // Each plan row = one post
+        redeployPlanBody.innerHTML = plan.map(p => {
+            const loc     = POST_LOCATIONS[p.areaId] || {};
+            const locName = loc.name || p.areaId;
+            const risk    = Math.round(loc.riskScore || 0);
+            const delta   = p.delta;
+
+            const riskBadge = risk >= 80 ? `<span style="color:#dc2626;font-weight:700;">${risk}</span>`
+                            : risk >= 60 ? `<span style="color:#d97706;font-weight:700;">${risk}</span>`
+                            :              `<span style="color:#16a34a;font-weight:700;">${risk}</span>`;
+
+            let moveBadge;
+            if (delta > 0) {
+                moveBadge = `<span style="display:inline-flex;align-items:center;gap:4px;
+                    background:#dcfce7;color:#166534;font-size:11px;font-weight:700;
+                    padding:2px 8px;border-radius:99px;">
+                    <span class="material-symbols-outlined" style="font-size:13px;">arrow_upward</span>
+                    +${delta} arriving
+                </span>`;
+            } else if (delta < 0) {
+                moveBadge = `<span style="display:inline-flex;align-items:center;gap:4px;
+                    background:#fee2e2;color:#991b1b;font-size:11px;font-weight:700;
+                    padding:2px 8px;border-radius:99px;">
+                    <span class="material-symbols-outlined" style="font-size:13px;">arrow_downward</span>
+                    ${delta} departing
+                </span>`;
+            } else {
+                moveBadge = `<span style="display:inline-flex;align-items:center;gap:4px;
+                    background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:600;
+                    padding:2px 8px;border-radius:99px;">
+                    — No change
+                </span>`;
+            }
+
+            const oldCount = (postOfficerMap[p.areaId] || []).length || 2;
+            return `<tr style="border-bottom:1px solid var(--color-outline-variant);">
+                <td style="padding:10px 16px;">
+                    <strong style="font-size:13px;">${locName}</strong>
+                </td>
+                <td style="padding:10px 16px; color:var(--color-outline); font-size:12px;">
+                    ${oldCount} officer${oldCount !== 1 ? 's' : ''}
+                </td>
+                <td style="padding:10px 16px; font-size:12px; font-weight:700;
+                    color:${delta > 0 ? '#166534' : delta < 0 ? '#991b1b' : 'inherit'};">
+                    ${p.newOfficerCount} officer${p.newOfficerCount !== 1 ? 's' : ''}
+                </td>
+                <td style="padding:10px 16px; text-align:center;">${riskBadge}</td>
+                <td style="padding:10px 16px; text-align:center;">${moveBadge}</td>
+            </tr>`;
+        }).join('');
+
+        // Show modal
+        redeployModal.style.display = 'flex';
+    }
+
+    function closeRedeployModalFn() {
+        redeployModal.style.display = 'none';
+        _pendingDeploymentPlan = null;
+    }
+
+    function confirmRedeploy() {
+        if (!_pendingDeploymentPlan) return;
+
+        // Apply the plan: redistribute officers across posts
+        // Strategy: for each post, the plan says how many officers it needs.
+        // Pull officers from over-staffed posts and assign to under-staffed posts.
+        const plan = _pendingDeploymentPlan;
+
+        // Build a queue of officers to move
+        const toMove = [];
+        const postOfficerMap = {};
+        officers.forEach(o => {
+            if (o.status !== 'Active') return;
+            const pid = o.postId;
+            if (!postOfficerMap[pid]) postOfficerMap[pid] = [];
+            postOfficerMap[pid].push(o);
+        });
+
+        // For posts that are over-staffed (delta < 0), pull excess officers
+        plan.forEach(p => {
+            if (p.delta >= 0) return;
+            const excess = Math.abs(p.delta);
+            const pool   = postOfficerMap[p.areaId] || [];
+            // Take from the end of the pool
+            for (let i = 0; i < excess && pool.length > 0; i++) {
+                toMove.push(pool.pop());
+            }
+        });
+
+        // For posts that need more officers (delta > 0), assign from the pool
+        plan.forEach(p => {
+            if (p.delta <= 0) return;
+            for (let i = 0; i < p.delta && toMove.length > 0; i++) {
+                const officer = toMove.shift();
+                officer.postId = p.areaId;
+                // Write reassignment signal for officer portal
+                const signal = {
+                    officerId: officer.id,
+                    postId:    p.areaId,
+                    reason:    `⚡ Deployment Engine redeployment — Risk Index: ${Math.round(POST_LOCATIONS[p.areaId]?.riskScore || 0)}`,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(`pravah_reassign_${officer.id}`, JSON.stringify(signal));
+                localStorage.setItem('pravah_latest_reassign', JSON.stringify(signal));
+            }
+        });
+
+        // Refresh UI
+        renderTable();
+        renderDeploymentMap();
+        closeRedeployModalFn();
+
+        if (typeof window.dispatchSystemAlert === 'function') {
+            window.dispatchSystemAlert(
+                '⚡ Redeployment Complete',
+                `${plan.filter(p => p.delta !== 0).length} posts updated by Deployment Engine.`,
+                'info'
+            );
+        }
+    }
+
+    if (btnRedeploy)       btnRedeploy.addEventListener('click', openRedeployModal);
+    if (closeRedeployBtn)  closeRedeployBtn.addEventListener('click', closeRedeployModalFn);
+    if (cancelRedeployBtn) cancelRedeployBtn.addEventListener('click', closeRedeployModalFn);
+    if (confirmRedeployBtn)confirmRedeployBtn.addEventListener('click', confirmRedeploy);
+
+    // Close modal on backdrop click
+    if (redeployModal) {
+        redeployModal.addEventListener('click', (e) => {
+            if (e.target === redeployModal) closeRedeployModalFn();
+        });
+    }
+
     /* —INDEX HUNGARIAN DISTANCE OPTIMIZER —————————— */
     function solveLinearSumAssignment(costMatrix) {
         const rows = costMatrix.length;

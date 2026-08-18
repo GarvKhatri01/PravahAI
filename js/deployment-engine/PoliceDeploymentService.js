@@ -34,9 +34,20 @@
 
 'use strict';
 
-const { IDeploymentEngine }                         = require('./IDeploymentEngine');
-const { ProportionalDeploymentAlgorithm }           = require('./algorithms/ProportionalDeploymentAlgorithm');
-const { SystemConstants }                           = require('./models');
+const _IDeploymentEngineModule = typeof require !== 'undefined'
+    ? require('./IDeploymentEngine')
+    : (typeof window !== 'undefined' ? window.PravahDeploymentEngine : {});
+const IDeploymentEngine = _IDeploymentEngineModule.IDeploymentEngine;
+
+const _algoModule = typeof require !== 'undefined'
+    ? require('./algorithms/ProportionalDeploymentAlgorithm')
+    : (typeof window !== 'undefined' ? window.PravahDeploymentEngine : {});
+const ProportionalDeploymentAlgorithm = _algoModule.ProportionalDeploymentAlgorithm;
+
+const _modelsModule = typeof require !== 'undefined'
+    ? require('./models')
+    : (typeof window !== 'undefined' ? window.PravahDeploymentEngine : {});
+const SystemConstants = _modelsModule.SystemConstants;
 
 class PoliceDeploymentService {
 
